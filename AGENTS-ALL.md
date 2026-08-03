@@ -11,17 +11,19 @@
 - `permission/`：权限系统的工作目录，本身不是 Git 仓库。权限系统的通用开发规范见 `permission/AGENTS.md`。
 - `permission/permission/`：权限系统后端，是独立的 Git 仓库。
 - `permission/permission_ui/`：权限系统前端，是独立的 Git 仓库。
-- `gateway/`：当前尚未定义用途和约束；在补充说明前，不要根据目录名推断其职责。
+- `gateway/`：Gateway 系统的工作目录，本身不是 Git 仓库。该系统的通用开发规范见 `gateway/AGENTS.md`。
+- `gateway/gateway/`：Gateway 后端服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现。
+- `gateway/gateway-ui/`：Gateway 前端，是独立的 Git 仓库，使用 Vue 3、TypeScript、Vite 和 Element Plus 实现。
 - `student_learn/`：不属于当前工作范围。忽略该仓库，不要读取、修改或为其执行检查、测试及构建。
 
 ## 通用约束
 
-- 工作区中的各 Git 仓库相互独立；`permission/permission/` 与 `permission/permission_ui/` 也必须作为两个仓库分别处理。执行 Git、依赖管理、构建、测试和发布命令时，必须在实际的仓库根目录内进行，不要把工作区根目录或 `permission/` 当作单一仓库。
+- 工作区中的各 Git 仓库相互独立；权限系统和 Gateway 系统的前后端也必须作为独立仓库分别处理。执行 Git、依赖管理、构建、测试和发布命令时，必须在实际的仓库根目录内进行，不要把工作区根目录、`permission/` 或顶层 `gateway/` 当作单一仓库。
 - 新增系统文档或 SDK 时，目录名应在 `document/`、`go-sdk/`、`java-sdk/` 和 `python-sdk/` 中保持一致，便于识别同一系统的配套内容。
 - OpenAPI 契约发生变化时，应检查并同步受影响系统的文档及 Go、Java、Python SDK；具体同步范围以该系统和各仓库内的 `AGENTS.md` 为准。
 - 修改范围应限于任务涉及的仓库，不要顺带改动其他仓库。
 - 不要修改、移动或删除各仓库的 `.git` 目录或文件。
-- `document/`、`go-sdk/`、`java-sdk/`、`python-sdk/`、`permission/permission/`、`permission/permission_ui/` 和 `gateway/` 中任何仓库发生修改时，完成必要验证后都必须立即在对应仓库中分别创建 Git 提交并推送当前分支，无需等待另行提醒；涉及多个仓库时，每个仓库都必须单独提交并推送，不能只处理其中一个。提交前检查改动范围，不要包含与当前任务无关的文件。若仓库尚未初始化 Git 或未配置可用远端，必须明确报告，不能静默跳过。
+- `document/`、`go-sdk/`、`java-sdk/`、`python-sdk/`、`permission/permission/`、`permission/permission_ui/`、`gateway/gateway/` 和 `gateway/gateway-ui/` 中任何仓库发生修改时，完成必要验证后都必须立即在对应仓库中分别创建 Git 提交并推送当前分支，无需等待另行提醒；涉及多个仓库时，每个仓库都必须单独提交并推送，不能只处理其中一个。提交前检查改动范围，不要包含与当前任务无关的文件。若仓库尚未初始化 Git 或未配置可用远端，必须明确报告，不能静默跳过。
 
 ## AGENTS.md 维护规则
 
