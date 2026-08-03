@@ -12,8 +12,9 @@
 - `permission/permission/`：权限系统后端，是独立的 Git 仓库。
 - `permission/permission_ui/`：权限系统前端，是独立的 Git 仓库。
 - `gateway/`：Gateway 系统的工作目录，本身不是 Git 仓库。该系统的通用开发规范见 `gateway/AGENTS.md`。
-- `gateway/gateway/`：Gateway 后端服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现。
-- `gateway/gateway-ui/`：Gateway 前端，是独立的 Git 仓库，使用 Vue 3、TypeScript、Vite 和 Element Plus 实现。
+- `gateway/gateway/`：Gateway 运行时路由服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；只负责运行时路由能力。
+- `gateway/gateway-admin/`：Gateway 后端管理服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；负责接口路由配置等管理能力。
+- `gateway/gateway-ui/`：Gateway 管理前端，是独立的 Git 仓库，使用 Vue 3、TypeScript、Vite 和 Element Plus 实现。
 - `student_learn/`：不属于当前工作范围。忽略该仓库，不要读取、修改或为其执行检查、测试及构建。
 
 ## 通用约束
@@ -23,7 +24,7 @@
 - OpenAPI 契约发生变化时，应检查并同步受影响系统的文档及 Go、Java、Python SDK；具体同步范围以该系统和各仓库内的 `AGENTS.md` 为准。
 - 修改范围应限于任务涉及的仓库，不要顺带改动其他仓库。
 - 不要修改、移动或删除各仓库的 `.git` 目录或文件。
-- `document/`、`go-sdk/`、`java-sdk/`、`python-sdk/`、`permission/permission/`、`permission/permission_ui/`、`gateway/gateway/` 和 `gateway/gateway-ui/` 中任何仓库发生修改时，完成必要验证后都必须立即在对应仓库中分别创建 Git 提交并推送当前分支，无需等待另行提醒；涉及多个仓库时，每个仓库都必须单独提交并推送，不能只处理其中一个。提交前检查改动范围，不要包含与当前任务无关的文件。若仓库尚未初始化 Git 或未配置可用远端，必须明确报告，不能静默跳过。
+- `document/`、`go-sdk/`、`java-sdk/`、`python-sdk/`、`permission/permission/`、`permission/permission_ui/`、`gateway/gateway/`、`gateway/gateway-admin/` 和 `gateway/gateway-ui/` 中任何仓库发生修改时，完成必要验证后都必须立即在对应仓库中分别创建 Git 提交并推送当前分支，无需等待另行提醒；涉及多个仓库时，每个仓库都必须单独提交并推送，不能只处理其中一个。提交前检查改动范围，不要包含与当前任务无关的文件。若仓库尚未初始化 Git 或未配置可用远端，必须明确报告，不能静默跳过。
 
 ## AGENTS.md 维护规则
 
