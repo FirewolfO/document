@@ -12,8 +12,8 @@
 - `permission/permission/`：权限系统后端，是独立的 Git 仓库。
 - `permission/permission_ui/`：权限系统前端，是独立的 Git 仓库。
 - `gateway/`：Gateway 系统的工作目录，本身不是 Git 仓库。该系统的通用开发规范见 `gateway/AGENTS.md`。
-- `gateway/gateway/`：Gateway 运行时路由服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；只负责运行时路由能力，不提供配置管理 API 或其他固定业务 API。
-- `gateway/gateway-admin/`：Gateway 后端管理服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；负责接口路由配置等管理能力。
+- `gateway/gateway/`：Gateway 运行时路由服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；通过 `/api/{service}/{path}` 接收请求，验签通过且存在匹配路由时才转发，不提供配置管理 API 或其他固定业务 API。
+- `gateway/gateway-admin/`：Gateway 后端管理服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；负责服务和接口路由配置等管理能力，配置存入数据库，表结构保存在该仓库的 SQL migration 中。
 - `gateway/gateway-ui/`：Gateway 管理前端，是独立的 Git 仓库，使用 Vue 3、TypeScript、Vite 和 Element Plus 实现。
 - `student_learn/`：不属于当前工作范围。忽略该仓库，不要读取、修改或为其执行检查、测试及构建。
 
