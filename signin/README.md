@@ -19,25 +19,29 @@ Sign-in 只负责确认用户身份以及维护认证账号。资源、角色和
 
 ```text
 Browser (cloud-ui :5176)
+        |-- /api/v1/auth/{csrf,login,register,...} --> Sign-in (:8084)
         |
-        | /api/v1, Cookie Session + CSRF
-        v
-Sign-in (:8084)
+        `-- /api/open/signin/**, CLOUD_SESSION --> Gateway (:8082)
+                                                    | Inner: exchange Session for STS
+                                                    | sign actual upstream request
+                                                    v
+                                               Sign-in (:8084)
         |
         | JPA + Flyway
         v
 accounts database
 ```
 
-Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求由 Gateway 携带 `CLOUD_SESSION` 换取短期用户凭据；编程请求则由 Gateway 解析有效用户 AK 并取得对应 SK 完成验签，具体 OpenAPI 是否允许编程访问由 Gateway 的 Open 路由配置决定。Inner 响应中的明文 SK 只允许在受签名保护的内部链路中传输，不得记录。
+Gateway 使用自身服务 AK/SK 经过 `/api/inner/signin/credentials/{resolve,exchange}` 调用 Sign-in Inner 接口，不能绕过 Gateway Inner 路由配置。浏览器请求由 Gateway 携带 `CLOUD_SESSION` 换取短期用户凭据；编程请求则由 Gateway 解析有效用户 AK 并取得对应 SK 完成验签，具体 OpenAPI 是否允许编程访问由 Gateway 的 Open 路由配置决定。Gateway 随后使用用户凭据对实际上游请求重新签名，Sign-in 验签后恢复当前请求的用户身份。Inner 响应中的明文 SK 只允许在受签名保护的内部链路中传输，不得记录。
 
 ## 浏览器认证流程
 
 1. 前端先调用 `GET /api/v1/auth/csrf`，接收可由 JavaScript 读取的 `XSRF-TOKEN` Cookie。
 2. 账号登录调用密码接口；邮箱或手机号登录先请求验证码，再提交同一标识与验证码。
-3. 注册、验证码发送、登录、退出、资料更新和密码修改请求携带 Cookie，并将其值放入 `X-XSRF-TOKEN` 请求头。
+3. 注册、验证码发送和登录写请求携带 Cookie，并将 CSRF Cookie 值放入 `X-XSRF-TOKEN` 请求头。
 4. 注册或登录成功后，后端设置 `HttpOnly` 的 `CLOUD_SESSION` Cookie；前端不存储长期 Token。
-5. 页面刷新时，前端调用 `GET /api/v1/auth/me` 恢复用户状态；返回 `401` 时进入登录注册页。
+5. 页面刷新、退出、资料、密码和 API 密钥请求统一使用 Gateway Open 地址 `/api/open/signin/**`；Gateway 用登录态交换 STS 后签名调用 Sign-in。
+6. 页面刷新时，`GET /api/open/signin/auth/me` 返回 `401` 则进入登录注册页。
 
 ## API 摘要
 
@@ -63,11 +67,11 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 
 ## 数据结构
 
-Flyway migration 创建 `accounts`、`login_verification_codes` 和 `api_credentials` 表。验证码表只保存验证码 BCrypt 摘要、账号、发送渠道、有效期、失败次数和消费时间，不保存或记录明文验证码。`api_credentials` 只保存加密后的 SK；列表返回掩码，显式复制接口在校验 Session、CSRF 和凭据归属后仅返回指定的一条 SK。数据库结构的后续变化必须继续以 migration 形式提交。
+Flyway migration 创建 `accounts`、`login_verification_codes`、`api_credentials` 和 `temporary_api_credentials` 表。验证码表只保存验证码 BCrypt 摘要、账号、发送渠道、有效期、失败次数和消费时间，不保存或记录明文验证码。永久和短期凭据表都只保存加密后的 SK；短期 STS 带有效期，过期后不能再用于上游请求签名。数据库结构的后续变化必须继续以 migration 形式提交。
 
 ## Gateway Inner 认证
 
-`/api/v1/inner/**` 不使用浏览器 CSRF，而是要求完整的 Gateway HMAC 请求头：`X-Gateway-Credential`、`X-Gateway-Signature`、`X-Gateway-Timestamp`、`X-Gateway-Nonce` 和 `X-Gateway-Content-SHA256`。签名算法及 canonical request 与 Gateway 运行时一致，并拒绝过期时间戳与重复 nonce。
+`/api/v1/inner/**` 不使用浏览器 CSRF，而是要求完整的 Gateway HMAC 请求头：`X-Gateway-Credential`、`X-Gateway-Signature`、`X-Gateway-Timestamp`、`X-Gateway-Nonce` 和 `X-Gateway-Content-SHA256`。Gateway 转发 Open 用户请求时也携带同样的签名头，但使用用户永久或短期凭据；Sign-in 验签后只在当前请求内恢复身份。签名算法及 canonical request 与 Gateway 运行时一致，并拒绝过期时间戳与重复 nonce。
 
 部署时必须稳定配置 `SIGNIN_CREDENTIAL_ENCRYPTION_KEY`，否则已有用户 SK 无法解密；`SIGNIN_INNER_GATEWAY_ACCESS_KEY` 与 `SIGNIN_INNER_GATEWAY_SECRET_KEY` 必须使用 Gateway 服务在管理面生成的 AK/SK，并与 Gateway 的 `GATEWAY_SIGNIN_ACCESS_KEY`、`GATEWAY_SIGNIN_SECRET_KEY` 一致。
 
