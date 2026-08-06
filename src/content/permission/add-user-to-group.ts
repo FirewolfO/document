@@ -14,7 +14,7 @@ export const addUserToGroupDocument: EndpointDocument = {
   notices: commonNotices('当前服务未设置硬限流；生产网关建议单应用不超过 50 QPS。'),
   prerequisites: [
     '用户组必须属于签名凭据对应的应用。',
-    '统一用户应用使用 user 主体和全局 username；自维护用户应用使用 subject 主体和当前应用 externalId。',
+    '用户主体固定使用 user，identifier 填 People 用户名。',
     '主体必须存在且处于启用状态；重复加入同一用户不会创建重复关系。',
     'Client Secret 只允许保存在业务服务端，并由 SDK 在本地计算 HMAC-SHA256。',
   ],
@@ -27,8 +27,8 @@ export const addUserToGroupDocument: EndpointDocument = {
   responseFields: [
     ...commonEnvelopeFields,
     { name: 'data.groupCode', location: 'Response', type: 'string', required: true, description: '用户组编码。', example: 'content_team' },
-    { name: 'data.principal.type', location: 'Response', type: 'string', required: true, description: '规范化后的主体类型。', example: 'subject' },
-    { name: 'data.principal.identifier', location: 'Response', type: 'string', required: true, description: '已加入用户组的主体标识。', example: 'user-10086' },
+    { name: 'data.principal.type', location: 'Response', type: 'string', required: true, description: '规范化后的主体类型。', example: 'user' },
+    { name: 'data.principal.identifier', location: 'Response', type: 'string', required: true, description: '已加入用户组的 People 用户名。', example: 'zhangsan' },
     { name: 'data.added', location: 'Response', type: 'boolean', required: true, description: '本次是否新建成员关系；成员原本就在组内时为 false。', example: 'true' },
   ],
   errors: [
@@ -39,7 +39,7 @@ export const addUserToGroupDocument: EndpointDocument = {
     http: {
       label: 'HTTP', language: 'bash',
       code: signedCurlExample('POST', '/openapi/user-groups/content_team/members', `{
-  "principal": {"type": "subject", "identifier": "user-10086"}
+  "principal": {"type": "user", "identifier": "zhangsan"}
 }`),
     },
     go: {
@@ -50,8 +50,8 @@ result, err := client.AddUserToGroup(
     context.Background(),
     "content_team",
     permission.Principal{
-        Type:       permission.PrincipalSubject,
-        Identifier: "user-10086",
+        Type:       permission.PrincipalUser,
+        Identifier: "zhangsan",
     },
 )
 if err != nil {
@@ -65,7 +65,7 @@ log.Printf("added=%v", result.Added)`,
 
 UserGroupMemberResult result = client.addUserToGroup(
     "content_team",
-    Principal.subject("user-10086"));
+    Principal.user("zhangsan"));
 System.out.println(result.added);`,
     },
     python: {
@@ -74,7 +74,7 @@ System.out.println(result.added);`,
 
 result = client.add_user_to_group(
     "content_team",
-    Principal.subject("user-10086"),
+    Principal.user("zhangsan"),
 )
 print(result.added)`,
     },
@@ -85,8 +85,8 @@ print(result.added)`,
   "data": {
     "groupCode": "content_team",
     "principal": {
-      "type": "subject",
-      "identifier": "user-10086"
+      "type": "user",
+      "identifier": "zhangsan"
     },
     "added": true
   },

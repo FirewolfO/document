@@ -8,10 +8,10 @@
 POST /api/v1/openapi/user-groups/{code}/members
 Content-Type: application/json
 
-{"principal":{"type":"subject","identifier":"user-10086"}}
+{"principal":{"type":"user","identifier":"zhangsan"}}
 ```
 
-统一用户应用使用 `type=user`，`identifier` 填全局用户名；自维护用户应用使用 `type=subject`，`identifier` 填当前应用的 `externalId`。用户组和主体都按签名凭据所属应用隔离。
+用户主体固定使用 `type=user`，`identifier` 填 People 用户名；用户组和授权关系仍按签名凭据所属应用隔离。
 
 该接口只追加成员，不会替换用户组已有成员、角色或直接权限。首次加入返回 `added=true`，重复加入返回 `added=false`：
 
@@ -21,7 +21,7 @@ Content-Type: application/json
   "message": "success",
   "data": {
     "groupCode": "content_team",
-    "principal": {"type": "subject", "identifier": "user-10086"},
+    "principal": {"type": "user", "identifier": "zhangsan"},
     "added": true
   },
   "requestId": "req_01K1K7H8Q4J2Y0W6V3T5B9N8M"
@@ -43,7 +43,7 @@ POST /api/v1/openapi/permission-grants
 
 {
   "principals": [
-    {"type":"subject","identifier":"user-10086"},
+    {"type":"user","identifier":"zhangsan"},
     {"type":"group","identifier":"content_team"}
   ],
   "permissionCodes": ["article:read","article:publish"]
@@ -59,7 +59,7 @@ POST /api/v1/openapi/roles/editor/principals
 
 {
   "principals": [
-    {"type":"subject","identifier":"user-10086"},
+    {"type":"user","identifier":"zhangsan"},
     {"type":"group","identifier":"content_team"}
   ]
 }
@@ -71,7 +71,7 @@ POST /api/v1/openapi/roles/editor/principals
 
 ## HMAC-SHA256 签名
 
-受保护的 `/api/v1/integration/*` 和 `/api/v1/openapi/*` 请求使用 `Permission-HMAC-SHA256`。`client_id` 是公开的凭据标识，只出现在 `Authorization` 的 `Credential` 参数中；`client_secret` 只用于本地计算 HMAC，绝不进入 Header、URL 或请求体。
+受保护的 `/api/v1/openapi/*` 请求使用 `Permission-HMAC-SHA256`。`client_id` 是公开的凭据标识，只出现在 `Authorization` 的 `Credential` 参数中；`client_secret` 只用于本地计算 HMAC，绝不进入 Header、URL 或请求体。
 
 1. 对实际发送的原始请求体字节计算 SHA-256 小写十六进制摘要。
 2. 生成当前 UTC Unix 秒级时间戳和至少 16 字符的加密随机 nonce。

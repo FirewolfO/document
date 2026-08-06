@@ -14,7 +14,7 @@ export const removeUserFromGroupDocument: EndpointDocument = {
   notices: commonNotices('当前服务未设置硬限流；生产网关建议单应用不超过 50 QPS。'),
   prerequisites: [
     '用户组必须属于签名凭据对应的应用。',
-    '统一用户应用使用 user 和全局 username；自维护用户应用使用 subject 和当前应用 externalId。',
+    '用户主体固定使用 user，identifier 填 People 用户名。',
     '重复移除同一用户不会报错，removed=false 表示请求前已不在组内。',
     'API 网关和反向代理必须允许并完整转发 DELETE 的 JSON 请求体。',
   ],
@@ -38,7 +38,7 @@ export const removeUserFromGroupDocument: EndpointDocument = {
     http: {
       label: 'HTTP', language: 'bash',
       code: signedCurlExample('DELETE', '/openapi/user-groups/content_team/members', `{
-  "principal": {"type": "subject", "identifier": "user-10086"}
+  "principal": {"type": "user", "identifier": "zhangsan"}
 }`),
     },
     go: {
@@ -48,7 +48,7 @@ export const removeUserFromGroupDocument: EndpointDocument = {
 result, err := client.RemoveUserFromGroup(
     context.Background(),
     "content_team",
-    permission.Principal{Type: permission.PrincipalSubject, Identifier: "user-10086"},
+    permission.Principal{Type: permission.PrincipalUser, Identifier: "zhangsan"},
 )
 if err != nil {
     log.Fatal(err)
@@ -60,7 +60,7 @@ log.Printf("removed=%v", result.Removed)`,
       code: `${javaClient}
 
 UserGroupMemberRemovalResult result = client.removeUserFromGroup(
-    "content_team", Principal.subject("user-10086"));
+    "content_team", Principal.user("zhangsan"));
 System.out.println(result.removed);`,
     },
     python: {
@@ -68,7 +68,7 @@ System.out.println(result.removed);`,
       code: `${pythonClient}
 
 result = client.remove_user_from_group(
-    "content_team", Principal.subject("user-10086")
+    "content_team", Principal.user("zhangsan")
 )
 print(result.removed)`,
     },
@@ -78,7 +78,7 @@ print(result.removed)`,
   "message": "success",
   "data": {
     "groupCode": "content_team",
-    "principal": {"type": "subject", "identifier": "user-10086"},
+    "principal": {"type": "user", "identifier": "zhangsan"},
     "removed": true
   },
   "requestId": "req_01K1K7GROUPREMOVE00000001"

@@ -13,7 +13,7 @@ export const authorizeDocument: EndpointDocument = {
   path: '/openapi/authorize',
   notices: commonNotices('当前服务未设置硬限流；生产网关建议单应用不超过 100 QPS，每次最多判断 100 个权限码。'),
   prerequisites: [
-    '主体必须存在、处于启用状态，并且主体类型与应用用户模式一致。',
+    'People 用户必须存在且处于启用状态。',
     '鉴权应在业务后端执行；不得把 Client Secret 下发到官网、浏览器或移动端。',
     '默认拒绝：未知权限、未授权权限和停用主体均不可放行业务操作。',
   ],
@@ -25,19 +25,19 @@ export const authorizeDocument: EndpointDocument = {
   ],
   responseFields: [
     ...commonEnvelopeFields,
-    { name: 'data.principal.type', location: 'Response', type: 'string', required: true, description: '规范化后的主体类型。', example: 'subject' },
-    { name: 'data.principal.identifier', location: 'Response', type: 'string', required: true, description: '主体标识。', example: 'user-10086' },
+    { name: 'data.principal.type', location: 'Response', type: 'string', required: true, description: '规范化后的主体类型。', example: 'user' },
+    { name: 'data.principal.identifier', location: 'Response', type: 'string', required: true, description: 'People 用户名。', example: 'zhangsan' },
     { name: 'data.permissions', location: 'Response', type: 'object<string, boolean>', required: true, description: '权限编码到鉴权结果的映射；true 表示允许，false 表示拒绝。', example: '{"article:read":true,"article:delete":false}' },
   ],
   errors: [
     ...commonErrors,
-    { httpStatus: 404, code: 'NOT_FOUND', description: '指定主体不存在或已经停用。', resolution: '确认主体类型、主体标识和应用用户模式一致。' },
+    { httpStatus: 404, code: 'NOT_FOUND', description: '指定 People 用户不存在或已经停用。', resolution: '确认 People 用户名正确且员工账号处于启用状态。' },
   ],
   examples: {
     http: {
       label: 'HTTP', language: 'bash',
       code: signedCurlExample('POST', '/openapi/authorize', `{
-  "principal": {"type": "subject", "identifier": "user-10086"},
+  "principal": {"type": "user", "identifier": "zhangsan"},
   "permissions": ["article:read", "article:delete"]
 }`),
     },
@@ -46,8 +46,8 @@ export const authorizeDocument: EndpointDocument = {
       code: `${goClient}
 
 principal := permission.Principal{
-    Type:       permission.PrincipalSubject,
-    Identifier: "user-10086",
+    Type:       permission.PrincipalUser,
+    Identifier: "zhangsan",
 }
 result, err := client.Authorize(context.Background(), permission.AuthorizeRequest{
     Principal:   principal,
@@ -64,7 +64,7 @@ log.Printf("canRead=%v", result.Permissions["article:read"])
       label: 'Java SDK', language: 'java',
       code: `${javaClient}
 
-Principal principal = Principal.subject("user-10086");
+Principal principal = Principal.user("zhangsan");
 AuthorizeResult result = client.authorize(new AuthorizeRequest(
     principal,
     List.of("article:read", "article:delete")));
@@ -76,7 +76,7 @@ System.out.println(result.permissions.get("article:read"));
       label: 'Python SDK', language: 'python',
       code: `${pythonClient}
 
-principal = Principal.subject("user-10086")
+principal = Principal.user("zhangsan")
 result = client.authorize(
     principal,
     ["article:read", "article:delete"],
@@ -91,8 +91,8 @@ print(result.permissions["article:read"])
   "message": "success",
   "data": {
     "principal": {
-      "type": "subject",
-      "identifier": "user-10086"
+      "type": "user",
+      "identifier": "zhangsan"
     },
     "permissions": {
       "article:read": true,

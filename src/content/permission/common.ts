@@ -31,14 +31,14 @@ export const commonErrors: ErrorDefinition[] = [
 ]
 
 export const principalFields: FieldDefinition[] = [
-  { name: 'principal.type', location: 'Body', type: 'string', required: false, description: '统一用户应用使用 user；应用级用户应用使用 subject。省略时按应用用户类型推断。', example: 'subject' },
-  { name: 'principal.identifier', location: 'Body', type: 'string', required: true, description: 'user 填全局用户名；subject 填当前应用用户的 externalId。最长 128 字符。', example: 'user-10086' },
+  { name: 'principal.type', location: 'Body', type: 'string', required: false, description: 'People 用户固定使用 user；省略时默认按 user 处理。', example: 'user' },
+  { name: 'principal.identifier', location: 'Body', type: 'string', required: true, description: '填写 People 用户名，最长 128 字符。', example: 'zhangsan' },
 ]
 
 export const assignablePrincipalFields: FieldDefinition[] = [
-  { name: 'principals', location: 'Body', type: 'array<object>', required: true, description: '需要增量操作的主体，至少 1 项、最多 100 项；重复主体会自动去重。', example: '[{"type":"subject","identifier":"user-10086"},{"type":"group","identifier":"content_team"}]' },
-  { name: 'principals[].type', location: 'Body', type: 'string', required: true, description: '统一用户使用 user，自维护用户使用 subject，用户组使用 group。', example: 'group' },
-  { name: 'principals[].identifier', location: 'Body', type: 'string', required: true, description: 'user 填全局用户名，subject 填当前应用 externalId，group 填当前应用用户组编码。', example: 'content_team' },
+  { name: 'principals', location: 'Body', type: 'array<object>', required: true, description: '需要增量操作的 People 用户或用户组，至少 1 项、最多 100 项；重复主体会自动去重。', example: '[{"type":"user","identifier":"zhangsan"},{"type":"group","identifier":"content_team"}]' },
+  { name: 'principals[].type', location: 'Body', type: 'string', required: true, description: 'People 用户使用 user，用户组使用 group。', example: 'group' },
+  { name: 'principals[].identifier', location: 'Body', type: 'string', required: true, description: 'user 填 People 用户名，group 填当前应用用户组编码。', example: 'content_team' },
 ]
 
 export function signedCurlExample(method: string, path: string, body: string): string {

@@ -1,0 +1,50 @@
+# People 系统说明
+
+People 用于统一管理企业内部员工信息，拥有与云账号 Sign-in 完全隔离的闭环账号体系，不提供注册入口。
+
+## 访问架构
+
+- People 管理前端默认地址为 `http://localhost:5177`。
+- People 后端默认监听 `8085`，仅 `/health` 可直连。
+- 所有业务请求统一访问 Gateway Open 路径 `/api/open/people/**`；Gateway 匹配显式匿名 Open 路由后，使用自己的系统凭据签名上游请求，并按路由配置转发 People Session Cookie 和 CSRF Header。
+- People 后端校验 Gateway 上游签名，拒绝浏览器或其他服务绕过 Gateway 直连业务接口。
+
+## 默认管理员
+
+```text
+用户名：admin
+密码：admin
+```
+
+该账号在首次启动时幂等创建。生产环境部署后应立即登录并修改默认密码。
+
+## 员工账号规则
+
+People 不提供注册接口，员工由 People 管理员创建。新员工没有初始密码，在 `mustChangePassword=true` 时登录不校验输入密码，并被限制为只能查看当前会话、退出或设置密码。只要未成功设置密码，下次登录仍按首次登录处理；设置后即使用 bcrypt 哈希保存并严格校验新密码。
+
+## Open 接口
+
+| 方法 | Gateway Open 路径 | 用途 |
+| --- | --- | --- |
+| `GET` | `/api/open/people/auth/csrf` | 初始化 CSRF Cookie |
+| `POST` | `/api/open/people/auth/login` | People 独立登录 |
+| `GET` | `/api/open/people/auth/me` | 当前员工会话 |
+| `POST` | `/api/open/people/auth/logout` | 退出并使会话失效 |
+| `POST` | `/api/open/people/auth/change-password` | 首次设置或修改密码 |
+| `GET/POST` | `/api/open/people/employees` | 员工列表与创建 |
+| `PUT/DELETE` | `/api/open/people/employees/{id}` | 更新或停用员工 |
+| `POST` | `/api/open/people/oauth/authorize` | 创建 OAuth 授权码 |
+| `POST` | `/api/open/people/oauth/token` | 授权码或客户端凭证换 Token |
+| `GET` | `/api/open/people/oauth/userinfo` | 获取 OAuth 用户信息 |
+
+## Permission OAuth 客户端
+
+本地开发默认配置：
+
+```text
+Client ID: permission-ui
+Client Secret: permission-local-client-secret-change-me
+Redirect URI: http://localhost:5173/oauth/callback
+```
+
+Permission 前端从后端获取授权地址后跳转 People，回调时由 Permission 后端通过 Gateway Open 交换 Token、读取用户信息并同步员工目录。生产环境必须更换 Client Secret 并限制回调地址。

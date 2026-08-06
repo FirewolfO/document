@@ -11,7 +11,7 @@ function rolePrincipalDocument(method: HttpMethod): EndpointDocument {
   const pythonAction = adding ? 'add' : 'remove'
   const body = `{
   "principals": [
-    {"type": "subject", "identifier": "user-10086"},
+    {"type": "user", "identifier": "zhangsan"},
     {"type": "group", "identifier": "content_team"}
   ]
 }`
@@ -24,8 +24,8 @@ function rolePrincipalDocument(method: HttpMethod): EndpointDocument {
     path: '/openapi/roles/{code}/principals',
     notices: commonNotices('当前服务未设置硬限流；单次最多处理 100 个主体。'),
     prerequisites: [
-      '角色、用户组和应用级用户必须属于签名凭据对应的应用。',
-      '统一用户应用可混合 user 和 group；自维护用户应用可混合 subject 和 group。',
+      '角色和用户组必须属于签名凭据对应的应用，用户必须存在于 People。',
+      '主体只允许使用 People 用户 user 和当前应用用户组 group。',
       `${adding ? '增加主体时角色必须已启用；移除主体允许处理已停用角色。' : '移除主体允许处理已停用角色。'}内置系统管理员角色不允许通过 OpenAPI 修改主体。`,
       ...(adding ? [] : ['API 网关和反向代理必须允许并完整转发 DELETE 的 JSON 请求体。']),
     ],
@@ -55,7 +55,7 @@ result, err := client.${sdkAction}RolePrincipals(
     context.Background(),
     "editor",
     []permission.Principal{
-        {Type: permission.PrincipalSubject, Identifier: "user-10086"},
+        {Type: permission.PrincipalUser, Identifier: "zhangsan"},
         {Type: permission.PrincipalGroup, Identifier: "content_team"},
     },
 )
@@ -71,7 +71,7 @@ log.Printf("changed=%d", result.ChangedCount)`,
 RelationMutationResult result = client.${pythonAction}RolePrincipals(
     "editor",
     List.of(
-        Principal.subject("user-10086"),
+        Principal.user("zhangsan"),
         Principal.group("content_team")));
 System.out.println(result.changedCount);`,
       },
@@ -81,7 +81,7 @@ System.out.println(result.changedCount);`,
 
 result = client.${pythonAction}_role_principals(
     "editor",
-    [Principal.subject("user-10086"), Principal.group("content_team")],
+    [Principal.user("zhangsan"), Principal.group("content_team")],
 )
 print(result.changed_count)`,
       },
@@ -91,7 +91,7 @@ print(result.changed_count)`,
   "message": "success",
   "data": {
     "principals": [
-      {"type": "subject", "identifier": "user-10086"},
+      {"type": "user", "identifier": "zhangsan"},
       {"type": "group", "identifier": "content_team"}
     ],
     "roleCode": "editor",

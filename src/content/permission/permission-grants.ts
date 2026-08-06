@@ -11,7 +11,7 @@ function permissionGrantDocument(method: HttpMethod): EndpointDocument {
   const pythonAction = adding ? 'add' : 'remove'
   const body = `{
   "principals": [
-    {"type": "subject", "identifier": "user-10086"},
+    {"type": "user", "identifier": "zhangsan"},
     {"type": "group", "identifier": "content_team"}
   ],
   "permissionCodes": ["article:read", "article:publish"]
@@ -25,8 +25,8 @@ function permissionGrantDocument(method: HttpMethod): EndpointDocument {
     path: '/openapi/permission-grants',
     notices: commonNotices('当前服务未设置硬限流；单次最多 100 个主体和 100 个权限编码。'),
     prerequisites: [
-      '主体和权限必须属于签名凭据对应的应用；统一用户本身是全局共享的，但权限关系仍按权限所属应用隔离。',
-      '统一用户应用可混合 user 和 group；自维护用户应用可混合 subject 和 group。',
+      'People 用户必须存在且处于启用状态，权限必须属于签名凭据对应的应用。',
+      '主体只允许使用 People 用户 user 和当前应用用户组 group。',
       `${action}采用幂等语义；重复${action}不会报错，changedCount 只统计实际变化的关系数。`,
       ...(adding ? [] : ['API 网关和反向代理必须允许并完整转发 DELETE 的 JSON 请求体。']),
     ],
@@ -54,7 +54,7 @@ function permissionGrantDocument(method: HttpMethod): EndpointDocument {
 
 result, err := client.${sdkAction}Permissions(context.Background(), permission.PermissionMutationRequest{
     Principals: []permission.Principal{
-        {Type: permission.PrincipalSubject, Identifier: "user-10086"},
+        {Type: permission.PrincipalUser, Identifier: "zhangsan"},
         {Type: permission.PrincipalGroup, Identifier: "content_team"},
     },
     PermissionCodes: []string{"article:read", "article:publish"},
@@ -70,7 +70,7 @@ log.Printf("changed=%d", result.ChangedCount)`,
 
 RelationMutationResult result = client.${pythonAction}Permissions(
     List.of(
-        Principal.subject("user-10086"),
+        Principal.user("zhangsan"),
         Principal.group("content_team")),
     List.of("article:read", "article:publish"));
 System.out.println(result.changedCount);`,
@@ -80,7 +80,7 @@ System.out.println(result.changedCount);`,
         code: `${pythonClient}
 
 result = client.${pythonAction}_permissions(
-    [Principal.subject("user-10086"), Principal.group("content_team")],
+    [Principal.user("zhangsan"), Principal.group("content_team")],
     ["article:read", "article:publish"],
 )
 print(result.changed_count)`,
@@ -91,7 +91,7 @@ print(result.changed_count)`,
   "message": "success",
   "data": {
     "principals": [
-      {"type": "subject", "identifier": "user-10086"},
+      {"type": "user", "identifier": "zhangsan"},
       {"type": "group", "identifier": "content_team"}
     ],
     "permissionCodes": ["article:read", "article:publish"],
