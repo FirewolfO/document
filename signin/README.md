@@ -8,7 +8,7 @@ Sign-in 是云服务统一身份认证后端，实际代码仓库目录和远端
 - 账号使用密码登录；已绑定的邮箱或手机号使用 6 位一次性验证码登录。
 - 验证码 5 分钟过期、60 秒内不可重发、每小时最多发送 5 次、最多尝试 5 次，验证成功后立即失效。
 - 使用浏览器 Cookie Session 恢复登录状态和退出登录。
-- 查看基本资料，修改显示名称、邮箱、手机号和头像 URL。
+- 查看基本资料，修改显示名称、邮箱、手机号、头像 URL 和登录密码。
 - 管理用户级 API AK/SK；SK 使用独立主密钥加密，列表只返回掩码，用户显式复制时按凭据读取。
 - 通过 Gateway-HMAC-SHA256 保护的 Inner 接口解析用户 AK/SK，或把浏览器会话换成 5 分钟短期 AK/SK。
 - 邮箱、手机号和账号均有服务层检查与数据库唯一约束。
@@ -35,7 +35,7 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 
 1. 前端先调用 `GET /api/v1/auth/csrf`，接收可由 JavaScript 读取的 `XSRF-TOKEN` Cookie。
 2. 账号登录调用密码接口；邮箱或手机号登录先请求验证码，再提交同一标识与验证码。
-3. 注册、验证码发送、登录、退出和资料更新请求携带 Cookie，并将其值放入 `X-XSRF-TOKEN` 请求头。
+3. 注册、验证码发送、登录、退出、资料更新和密码修改请求携带 Cookie，并将其值放入 `X-XSRF-TOKEN` 请求头。
 4. 注册或登录成功后，后端设置 `HttpOnly` 的 `CLOUD_SESSION` Cookie；前端不存储长期 Token。
 5. 页面刷新时，前端调用 `GET /api/v1/auth/me` 恢复用户状态；返回 `401` 时进入登录注册页。
 
@@ -51,6 +51,7 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 | `GET` | `/api/v1/auth/me` | 查询当前用户 |
 | `POST` | `/api/v1/auth/logout` | 注销当前会话 |
 | `PUT` | `/api/v1/account/profile` | 更新个人资料 |
+| `PUT` | `/api/v1/account/password` | 校验当前密码后修改登录密码 |
 | `GET` | `/api/v1/account/api-credentials` | 查询当前账号 API 密钥，SK 仅返回掩码 |
 | `POST` | `/api/v1/account/api-credentials` | 创建用户 AK/SK，SK 仅本次返回 |
 | `POST` | `/api/v1/account/api-credentials/{id}/secret` | 按需读取当前账号的一条 SK，用于显式复制 |
