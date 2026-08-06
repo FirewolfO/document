@@ -12,7 +12,7 @@
 - `permission/permission/`：权限系统后端，是独立的 Git 仓库。
 - `permission/permission_ui/`：权限系统前端，是独立的 Git 仓库。
 - `gateway/`：Gateway 系统的工作目录，本身不是 Git 仓库。该系统的通用开发规范见 `gateway/AGENTS.md`。
-- `gateway/gateway/`：Gateway 运行时路由服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；通过 `/api/{service}/{path}` 接收请求，验签通过且存在匹配路由时才转发，不提供配置管理 API 或其他固定业务 API。
+- `gateway/gateway/`：Gateway 运行时路由服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；通过 `/api/{audience}/{service}/{path}` 接收 Inner/Open 请求，完成对应身份认证且存在匹配路由时才转发，不提供配置管理 API 或其他固定业务 API。
 - `gateway/gateway-admin/`：Gateway 后端管理服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；负责服务和接口路由配置等管理能力，配置存入数据库，表结构保存在该仓库的 SQL migration 中。
 - `gateway/gateway-ui/`：Gateway 管理前端，是独立的 Git 仓库，使用 Vue 3、TypeScript、Vite 和 Element Plus 实现。
 - `sigin/`：云服务统一身份认证后端，是独立的 Git 仓库；实际仓库名为 `sigin`，负责用户登录、注册和认证凭据生命周期，使用 Java 和 Spring Boot 实现。
