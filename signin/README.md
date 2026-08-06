@@ -9,7 +9,7 @@ Sign-in 是云服务统一身份认证后端，实际代码仓库目录和远端
 - 验证码 5 分钟过期、60 秒内不可重发、每小时最多发送 5 次、最多尝试 5 次，验证成功后立即失效。
 - 使用浏览器 Cookie Session 恢复登录状态和退出登录。
 - 查看基本资料，修改显示名称、邮箱、手机号和头像 URL。
-- 管理用户级 API AK/SK；SK 使用独立主密钥加密，创建后仅返回一次明文，列表只返回掩码。
+- 管理用户级 API AK/SK；SK 使用独立主密钥加密，列表只返回掩码，用户显式复制时按凭据读取。
 - 通过 Gateway-HMAC-SHA256 保护的 Inner 接口解析用户 AK/SK，或把浏览器会话换成 5 分钟短期 AK/SK。
 - 邮箱、手机号和账号均有服务层检查与数据库唯一约束。
 
@@ -53,6 +53,7 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 | `PUT` | `/api/v1/account/profile` | 更新个人资料 |
 | `GET` | `/api/v1/account/api-credentials` | 查询当前账号 API 密钥，SK 仅返回掩码 |
 | `POST` | `/api/v1/account/api-credentials` | 创建用户 AK/SK，SK 仅本次返回 |
+| `POST` | `/api/v1/account/api-credentials/{id}/secret` | 按需读取当前账号的一条 SK，用于显式复制 |
 | `DELETE` | `/api/v1/account/api-credentials/{id}` | 删除当前账号的 API 密钥 |
 | `POST` | `/api/v1/inner/credentials/resolve` | Gateway 解析用户 AK/SK（Inner） |
 | `POST` | `/api/v1/inner/credentials/exchange` | Gateway 将浏览器会话换成短期 AK/SK（Inner） |
@@ -61,7 +62,7 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 
 ## 数据结构
 
-Flyway migration 创建 `accounts`、`login_verification_codes` 和 `api_credentials` 表。验证码表只保存验证码 BCrypt 摘要、账号、发送渠道、有效期、失败次数和消费时间，不保存或记录明文验证码。`api_credentials` 只保存加密后的 SK。数据库结构的后续变化必须继续以 migration 形式提交。
+Flyway migration 创建 `accounts`、`login_verification_codes` 和 `api_credentials` 表。验证码表只保存验证码 BCrypt 摘要、账号、发送渠道、有效期、失败次数和消费时间，不保存或记录明文验证码。`api_credentials` 只保存加密后的 SK；列表返回掩码，显式复制接口在校验 Session、CSRF 和凭据归属后仅返回指定的一条 SK。数据库结构的后续变化必须继续以 migration 形式提交。
 
 ## Gateway Inner 认证
 
