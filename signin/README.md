@@ -10,7 +10,6 @@ Sign-in 是云服务统一身份认证后端，实际代码仓库目录和远端
 - 使用浏览器 Cookie Session 恢复登录状态和退出登录。
 - 查看基本资料，修改显示名称、邮箱、手机号和头像 URL。
 - 管理用户级 API AK/SK；SK 使用独立主密钥加密，创建后仅返回一次明文，列表只返回掩码。
-- 账号级“编程访问”开关默认关闭，关闭时永久用户 AK/SK 不能调用 Gateway OpenAPI。
 - 通过 Gateway-HMAC-SHA256 保护的 Inner 接口解析用户 AK/SK，或把浏览器会话换成 5 分钟短期 AK/SK。
 - 邮箱、手机号和账号均有服务层检查与数据库唯一约束。
 
@@ -30,7 +29,7 @@ Sign-in (:8084)
 accounts database
 ```
 
-Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求由 Gateway 携带 `CLOUD_SESSION` 换取短期用户凭据；编程请求则由 Gateway 解析用户 AK 并在编程访问已开启时取得对应 SK 完成验签。Inner 响应中的明文 SK 只允许在受签名保护的内部链路中传输，不得记录。
+Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求由 Gateway 携带 `CLOUD_SESSION` 换取短期用户凭据；编程请求则由 Gateway 解析有效用户 AK 并取得对应 SK 完成验签，具体 OpenAPI 是否允许编程访问由 Gateway 的 Open 路由配置决定。Inner 响应中的明文 SK 只允许在受签名保护的内部链路中传输，不得记录。
 
 ## 浏览器认证流程
 
@@ -55,8 +54,6 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 | `GET` | `/api/v1/account/api-credentials` | 查询当前账号 API 密钥，SK 仅返回掩码 |
 | `POST` | `/api/v1/account/api-credentials` | 创建用户 AK/SK，SK 仅本次返回 |
 | `DELETE` | `/api/v1/account/api-credentials/{id}` | 删除当前账号的 API 密钥 |
-| `GET` | `/api/v1/account/programming-access` | 查询编程访问开关 |
-| `PUT` | `/api/v1/account/programming-access` | 开启或关闭编程访问 |
 | `POST` | `/api/v1/inner/credentials/resolve` | Gateway 解析用户 AK/SK（Inner） |
 | `POST` | `/api/v1/inner/credentials/exchange` | Gateway 将浏览器会话换成短期 AK/SK（Inner） |
 
@@ -64,7 +61,7 @@ Gateway 使用自身服务 AK/SK 调用 Sign-in Inner 接口。浏览器请求�
 
 ## 数据结构
 
-Flyway migration 创建 `accounts`、`login_verification_codes` 和 `api_credentials` 表。验证码表只保存验证码 BCrypt 摘要、账号、发送渠道、有效期、失败次数和消费时间，不保存或记录明文验证码。`api_credentials` 只保存加密后的 SK，账号表中的编程访问字段默认关闭。数据库结构的后续变化必须继续以 migration 形式提交。
+Flyway migration 创建 `accounts`、`login_verification_codes` 和 `api_credentials` 表。验证码表只保存验证码 BCrypt 摘要、账号、发送渠道、有效期、失败次数和消费时间，不保存或记录明文验证码。`api_credentials` 只保存加密后的 SK。数据库结构的后续变化必须继续以 migration 形式提交。
 
 ## Gateway Inner 认证
 
