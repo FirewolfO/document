@@ -46,6 +46,8 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .site-header-meta { color: #76827c; font-size: 13px; }
 
 .systems-page { min-height: 100vh; }
+.systems-page.embedded { min-height: 100vh; background: #f4f7f5; }
+.systems-page.embedded .systems-main { padding-top: 42px; }
 .systems-main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 70px 0; }
 .systems-heading { max-width: 700px; margin-bottom: 36px; }
 .section-kicker { color: var(--green); font-size: 13px; font-weight: 700; }
@@ -65,6 +67,8 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 }
 .system-card:hover { border-color: #9fc8b6; box-shadow: 0 12px 28px rgba(29, 55, 44, .08); transform: translateY(-2px); }
 .system-icon { display: grid; place-items: center; width: 52px; height: 52px; color: var(--green-dark); background: var(--green-soft); border-radius: 7px; font-size: 24px; }
+.system-icon.inner-icon { color: #704d0c; background: #fbefd2; }
+.audience-card { min-height: 210px; }
 .system-card-copy { display: flex; flex-direction: column; min-width: 0; }
 .system-card-title { display: flex; align-items: center; gap: 10px; }
 .system-card-title h2 { margin: 1px 0; font-size: 20px; letter-spacing: 0; }
@@ -80,6 +84,8 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .docs-workspace { display: grid; grid-template-columns: 282px minmax(0, 1fr); height: calc(100vh - 60px); }
 .embedded .docs-workspace { height: 100vh; }
 .docs-sidebar { min-width: 0; padding: 22px 18px; overflow-y: auto; background: #f8faf9; border-right: 1px solid var(--line); }
+.embedded-back-link { min-height: 34px; display: flex; align-items: center; gap: 7px; margin: -6px 0 14px; padding: 0 8px; color: #64716b; border-radius: 5px; font-size: 12px; }
+.embedded-back-link:hover { color: var(--green-dark); background: #e9f2ed; }
 .catalog-system { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 11px; margin-bottom: 20px; }
 .catalog-system-icon { display: grid; place-items: center; width: 38px; height: 38px; color: #ffffff; background: #2f4149; border-radius: 6px; }
 .catalog-system strong, .catalog-system small { display: block; letter-spacing: 0; }

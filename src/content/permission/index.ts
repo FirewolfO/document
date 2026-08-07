@@ -11,6 +11,7 @@ import { removeUserFromGroupDocument } from './remove-user-from-group'
 
 export const permissionSystem: SystemDocument = {
   id: 'permission',
+  audience: 'open',
   name: '权限系统',
   shortName: '权限',
   description: '面向业务服务的资源建模、角色管理、主体授权与实时鉴权接口。',

@@ -1,5 +1,6 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 export type ExampleLanguage = 'http' | 'go' | 'java' | 'python'
+export type ApiAudience = 'open' | 'inner'
 
 export interface NoticeItem {
   label: string
@@ -47,6 +48,7 @@ export interface EndpointDocument {
 
 export interface SystemDocument {
   id: string
+  audience: ApiAudience
   name: string
   shortName: string
   description: string

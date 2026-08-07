@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Collection, Document, Fold, Link, Menu as MenuIcon, Search } from '@element-plus/icons-vue'
 import CodeBlock from '@/components/CodeBlock.vue'
 import { findSystem } from '@/content/systems'
-import type { EndpointDocument, ExampleLanguage } from '@/types/document'
+import type { ApiAudience, EndpointDocument, ExampleLanguage } from '@/types/document'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,7 +14,8 @@ const exampleTab = ref<ExampleLanguage>('http')
 const catalogOpen = ref(false)
 
 const embedded = computed(() => route.query.embedded === '1')
-const system = computed(() => findSystem(String(route.params.systemId)))
+const audience = computed<ApiAudience>(() => route.params.audience === 'inner' ? 'inner' : 'open')
+const system = computed(() => findSystem(audience.value, String(route.params.systemId)))
 const filteredEndpoints = computed(() => {
   const keyword = searchText.value.trim().toLowerCase()
   if (!keyword) return system.value?.endpoints || []
@@ -31,7 +32,7 @@ const endpointGroups = computed(() => {
 })
 const activeEndpoint = computed(() => system.value?.endpoints.find((endpoint) => endpoint.id === activeEndpointId.value))
 
-watch(() => [route.params.systemId, route.query.endpoint], () => {
+watch(() => [route.params.audience, route.params.systemId, route.query.endpoint], () => {
   const requested = String(route.query.endpoint || '')
   const endpoints = system.value?.endpoints || []
   activeEndpointId.value = endpoints.some((endpoint) => endpoint.id === requested) ? requested : (endpoints[0]?.id || '')
@@ -57,11 +58,14 @@ function methodClass(endpoint: EndpointDocument) {
         <span class="site-brand-mark"><el-icon><Collection /></el-icon></span>
         <span><strong>开发者文档</strong><small>Developer Guides</small></span>
       </router-link>
-      <router-link class="back-link" to="/"><el-icon><ArrowLeft /></el-icon>全部系统</router-link>
+      <router-link class="back-link" :to="{ name: 'systems', params: { audience } }"><el-icon><ArrowLeft /></el-icon>{{ audience === 'inner' ? 'Inner' : 'Open' }} 系统</router-link>
     </header>
 
     <div class="docs-workspace">
       <aside class="docs-sidebar">
+        <router-link v-if="embedded" class="embedded-back-link" :to="{ name: 'systems', params: { audience }, query: { embedded: '1' } }">
+          <el-icon><ArrowLeft /></el-icon><span>{{ audience === 'inner' ? 'Inner' : 'Open' }} 系统列表</span>
+        </router-link>
         <div class="catalog-system">
           <span class="catalog-system-icon"><el-icon><Document /></el-icon></span>
           <div><strong>{{ system.name }}</strong><small>{{ system.version }} · {{ system.endpoints.length }} 个接口</small></div>
@@ -81,6 +85,9 @@ function methodClass(endpoint: EndpointDocument) {
       <el-drawer v-model="catalogOpen" direction="ltr" :with-header="false" size="290px" class="catalog-drawer">
         <aside class="docs-sidebar drawer-catalog">
           <div class="drawer-heading"><strong>接口目录</strong><el-button text :icon="Fold" aria-label="关闭目录" @click="catalogOpen = false" /></div>
+          <router-link v-if="embedded" class="embedded-back-link" :to="{ name: 'systems', params: { audience }, query: { embedded: '1' } }">
+            <el-icon><ArrowLeft /></el-icon><span>{{ audience === 'inner' ? 'Inner' : 'Open' }} 系统列表</span>
+          </router-link>
           <el-input v-model="searchText" :prefix-icon="Search" clearable placeholder="搜索接口" />
           <nav class="endpoint-catalog">
             <section v-for="group in endpointGroups" :key="group.name" class="catalog-group">
@@ -164,6 +171,6 @@ function methodClass(endpoint: EndpointDocument) {
   </div>
 
   <el-result v-else icon="warning" title="文档不存在" sub-title="该业务系统尚未注册接口文档">
-    <template #extra><el-button type="primary" :icon="Link" @click="$router.push('/')">返回系统列表</el-button></template>
+    <template #extra><el-button type="primary" :icon="Link" @click="$router.push({ name: 'systems', params: { audience } })">返回系统列表</el-button></template>
   </el-result>
 </template>

@@ -1,26 +1,43 @@
 <script setup lang="ts">
-import { ArrowRight, Collection, Key, Setting } from '@element-plus/icons-vue'
-import { systems } from '@/content/systems'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { ArrowRight, Collection, Connection, Key, Setting } from '@element-plus/icons-vue'
+import { systemsForAudience } from '@/content/systems'
+import type { ApiAudience } from '@/types/document'
+
+const route = useRoute()
+const audience = computed<ApiAudience>(() => route.params.audience === 'inner' ? 'inner' : 'open')
+const embedded = computed(() => route.query.embedded === '1')
+const systems = computed(() => systemsForAudience(audience.value))
+const audienceName = computed(() => audience.value === 'inner' ? 'Inner 内部接口' : 'Open 开放接口')
+const audienceDescription = computed(() => audience.value === 'inner'
+  ? '仅供受信任内部服务通过 Gateway 服务凭据调用的接口。'
+  : '面向云用户、浏览器应用和业务接入方开放的接口。')
 </script>
 
 <template>
-  <div class="systems-page">
-    <header class="site-header">
+  <div :class="['systems-page', { embedded }]">
+    <header v-if="!embedded" class="site-header">
       <router-link class="site-brand" to="/">
         <span class="site-brand-mark"><el-icon><Collection /></el-icon></span>
         <span><strong>开发者文档</strong><small>Developer Guides</small></span>
       </router-link>
-      <span class="site-header-meta">接口与接入指南</span>
+      <router-link class="back-link" to="/">选择接口类型</router-link>
     </header>
     <main class="systems-main">
       <section class="systems-heading">
-        <span class="section-kicker">业务系统</span>
-        <h1>选择接口文档</h1>
-        <p>按业务域维护的服务端接口、参数约束、响应协议与多语言 SDK 接入示例。</p>
+        <span class="section-kicker">{{ audienceName }}</span>
+        <h1>选择业务系统</h1>
+        <p>{{ audienceDescription }}</p>
       </section>
       <section class="system-list" aria-label="业务系统列表">
-        <router-link v-for="system in systems" :key="system.id" class="system-card" :to="`/systems/${system.id}`">
-          <div class="system-icon"><el-icon><Key /></el-icon></div>
+        <router-link
+          v-for="system in systems"
+          :key="system.id"
+          class="system-card"
+          :to="{ name: 'system-docs', params: { audience, systemId: system.id }, query: embedded ? { embedded: '1' } : {} }"
+        >
+          <div class="system-icon"><el-icon><component :is="audience === 'inner' ? Connection : Key" /></el-icon></div>
           <div class="system-card-copy">
             <div class="system-card-title"><h2>{{ system.name }}</h2><el-tag size="small" effect="plain">{{ system.version }}</el-tag></div>
             <p>{{ system.description }}</p>
