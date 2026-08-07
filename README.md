@@ -22,6 +22,8 @@ src/content/
 
 签名协议和用户组接入的可独立阅读版本位于 `permission/README.md`。
 
+统一管理平台及关联服务从空环境开始的安装、参数配置、启动顺序和生产部署说明见 [统一平台安装部署手册](internal-platform/README.md)。
+
 每个接口文档都必须维护注意事项、前提条件、请求说明、请求参数、响应值、错误码、HTTP/Go/Java/Python 请求示例和返回示例。新增业务系统时，在 `src/content/` 下新增同级业务目录，并在 `systems.ts` 注册。
 
 ## 本地启动
