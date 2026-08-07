@@ -22,7 +22,7 @@ People 用于统一管理企业内部员工信息，拥有与云账号 Sign-in �
 
 People 不提供注册接口，员工由 People 管理员创建。普通员工新增和修改时必须通过 `departmentId` 选择一个已启用部门，管理员可以不设置部门。新员工没有初始密码，在 `mustChangePassword=true` 时登录不校验输入密码，并被限制为只能查看当前会话、退出或设置密码。只要未成功设置密码，下次登录仍按首次登录处理；设置后即使用 bcrypt 哈希保存并严格校验新密码。
 
-部门由管理员统一维护编码、名称、描述和状态。停用部门不能再分配给员工，仍有关联员工的部门不能删除；部门改名会同步更新员工响应中的兼容字段 `department`。员工响应同时返回稳定的 `departmentId`。
+部门由管理员按树形层级维护，上级关系通过 `parentId` 表示。停用部门不能再分配给员工，仍有关联员工或下级部门的部门不能删除；修改上级部门时会拒绝自引用和循环层级。部门改名会同步更新员工响应中的兼容字段 `department`。员工响应同时返回稳定的 `departmentId`。
 
 ## Open 接口
 
@@ -40,6 +40,18 @@ People 不提供注册接口，员工由 People 管理员创建。普通员工�
 | `POST` | `/api/open/people/oauth/authorize` | 创建 OAuth 授权码 |
 | `POST` | `/api/open/people/oauth/token` | 授权码或客户端凭证换 Token |
 | `GET` | `/api/open/people/oauth/userinfo` | 获取 OAuth 用户信息 |
+
+## Inner 目录接口
+
+Permission 不直接读取 People 数据库。Gateway Admin 会在 Inner 工作区创建 `people` 目标服务、`permission` 调用服务和专用 AK/SK，Permission 使用 Gateway HMAC 签名调用：
+
+| 方法 | Gateway Inner 路径 | 用途 |
+| --- | --- | --- |
+| `GET` | `/api/inner/people/directory/employees` | 全量员工目录 |
+| `GET` | `/api/inner/people/directory/employees/{id}` | 单个员工及其当前部门 |
+| `GET` | `/api/inner/people/directory/departments` | 全量部门及 `parentId` 层级 |
+
+对应 People 上游路径为 `/api/v1/inner/directory/**`，并使用与 Open 路由不同的系统签名凭据。
 
 ## Permission OAuth 客户端
 
