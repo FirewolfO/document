@@ -16,6 +16,7 @@
 - `gateway/gateway-admin/`：Gateway 后端管理服务，是独立的 Git 仓库，使用 Go 和 CloudWeGo Hertz 实现；负责服务和接口路由配置等管理能力，配置存入数据库，表结构保存在该仓库的 SQL migration 中。
 - `gateway/gateway-ui/`：Gateway 管理前端，是独立的 Git 仓库，使用 Vue 3、TypeScript、Vite 和 Element Plus 实现。
 - `admin-ui/`：内部系统统一管理入口，是独立的 Git 仓库；使用 Vue 3、TypeScript、Vite、Vue Router、Pinia 和 Element Plus 实现，通过一次 People OAuth 登录集成 Permission 与 Gateway 管理模块。
+- `blog/`：内部博客系统，是独立的 Git 仓库；`backend/` 提供 People OAuth、Gateway Inner BFF、文章与文件接口，`frontend/` 提供独立管理页面，小文件存入 Garage，并原生接入 `admin-ui/`。
 - `people/`：企业内部员工信息系统，是独立的 Git 仓库；`backend/` 提供员工、闭环登录和 OAuth 服务，`frontend/` 提供管理页面，所有业务请求必须经过 Gateway Open 接口。
 - `sigin/`：云服务统一身份认证后端，是独立的 Git 仓库；实际仓库名为 `sigin`，负责用户登录、注册和认证凭据生命周期，使用 Java 和 Spring Boot 实现。
 - `cloud-ui/`：整个云服务的统一 Web 入口，是独立的 Git 仓库；使用 Vue 3、TypeScript、Vite、Vue Router、Pinia 和 Element Plus 实现，承载登录注册、产品导航和后续云控制台页面。
@@ -28,7 +29,7 @@
 - OpenAPI 契约发生变化时，应检查并同步受影响系统的文档及 Go、Java、Python SDK；具体同步范围以该系统和各仓库内的 `AGENTS.md` 为准。
 - 修改范围应限于任务涉及的仓库，不要顺带改动其他仓库。
 - 不要修改、移动或删除各仓库的 `.git` 目录或文件。
-- `document/`、`go-sdk/`、`java-sdk/`、`python-sdk/`、`permission/permission/`、`permission/permission_ui/`、`gateway/gateway/`、`gateway/gateway-admin/`、`gateway/gateway-ui/`、`admin-ui/`、`people/`、`sigin/` 和 `cloud-ui/` 中任何仓库发生修改时，完成必要验证后都必须立即在对应仓库中分别创建 Git 提交并推送当前分支，无需等待另行提醒；涉及多个仓库时，每个仓库都必须单独提交并推送，不能只处理其中一个。提交前检查改动范围，不要包含与当前任务无关的文件。若仓库尚未初始化 Git 或未配置可用远端，必须明确报告，不能静默跳过。
+- `document/`、`go-sdk/`、`java-sdk/`、`python-sdk/`、`permission/permission/`、`permission/permission_ui/`、`gateway/gateway/`、`gateway/gateway-admin/`、`gateway/gateway-ui/`、`admin-ui/`、`blog/`、`people/`、`sigin/` 和 `cloud-ui/` 中任何仓库发生修改时，完成必要验证后都必须立即在对应仓库中分别创建 Git 提交并推送当前分支，无需等待另行提醒；涉及多个仓库时，每个仓库都必须单独提交并推送，不能只处理其中一个。提交前检查改动范围，不要包含与当前任务无关的文件。若仓库尚未初始化 Git 或未配置可用远端，必须明确报告，不能静默跳过。
 
 ## AGENTS.md 维护规则
 

@@ -29,6 +29,8 @@ src/content/
 
 统一管理平台及关联服务从空环境开始的安装、参数配置、启动顺序和生产部署说明见 [统一平台安装部署手册](internal-platform/README.md)。
 
+内部 Blog、Gateway Inner 调用链及 Garage 小文件存储的安装与验证见 [Blog 与小文件存储安装手册](blog/README.md)。
+
 每个接口文档都必须维护注意事项、前提条件、请求说明、请求参数、响应值、错误码、HTTP/Go/Java/Python 请求示例和返回示例。新增业务系统时，在 `src/content/` 下新增同级业务目录，为每套文档声明 `audience: 'open' | 'inner'`，并在 `systems.ts` 注册。一个系统同时提供两类接口时，必须注册为两个独立的 `SystemDocument`，不得混合目录和调用凭据说明。
 
 ## 本地启动
