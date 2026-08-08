@@ -56,21 +56,22 @@ export const envelopeFields: FieldDefinition[] = [
 ]
 
 export const employeeInputFields: FieldDefinition[] = [
-  field('employeeNo', 'Body', 'string', true, '员工工号，最长 32 字符；服务端会转为大写。', 'E10086'),
   field('username', 'Body', 'string', true, '登录用户名，以字母开头，只能包含字母、数字、点、下划线或连字符，长度 3-64。', 'zhangsan'),
   field('displayName', 'Body', 'string', true, '员工姓名，最长 100 字符。', '张三'),
   field('email', 'Body', 'string', false, '邮箱，最长 255 字符。', 'zhangsan@example.com'),
   field('phone', 'Body', 'string', false, '联系电话，最长 32 字符。', '+86 13800138000'),
-  field('departmentId', 'Body', 'string', false, '部门 ID。普通员工必须选择已启用部门，管理员可为空。', 'dep_example'),
+  field('departmentId', 'Body', 'string', true, '已启用的部门 ID。', 'dep_example'),
   field('title', 'Body', 'string', false, '职位名称，最长 100 字符。', '后端工程师'),
-  field('role', 'Body', 'string', false, '角色：admin 或 employee；默认 employee。', 'employee'),
-  field('status', 'Body', 'string', false, '状态：enabled 或 disabled；默认 enabled。', 'enabled'),
+  field('employmentType', 'Body', 'string', false, '用工类型：full_time、part_time、contract 或 intern；默认 full_time。', 'full_time'),
+  field('hireDate', 'Body', 'string', false, '入职日期，YYYY-MM-DD。', '2026-08-01'),
+  field('probationEndDate', 'Body', 'string', false, '试用期结束日期，YYYY-MM-DD，不能早于入职日期。', '2026-11-01'),
+  field('workLocation', 'Body', 'string', false, '工作地点，最长 100 字符。', '北京'),
 ]
 
 export function employeeResponseFields(prefix = 'data'): FieldDefinition[] {
   return [
     field(`${prefix}.id`, 'Response', 'string', true, '员工公开 ID。', 'pep_example'),
-    field(`${prefix}.employeeNo`, 'Response', 'string', true, '员工工号。', 'E10086'),
+    field(`${prefix}.employeeNo`, 'Response', 'integer', true, '数据库自增员工号；界面按 6 位左补 0 显示。', '10086'),
     field(`${prefix}.username`, 'Response', 'string', true, '登录用户名。', 'zhangsan'),
     field(`${prefix}.displayName`, 'Response', 'string', true, '员工姓名。', '张三'),
     field(`${prefix}.email`, 'Response', 'string', true, '邮箱，未设置时为空字符串。', 'zhangsan@example.com'),
@@ -78,8 +79,13 @@ export function employeeResponseFields(prefix = 'data'): FieldDefinition[] {
     field(`${prefix}.departmentId`, 'Response', 'string', true, '所属部门 ID，未分配时为空字符串。', 'dep_example'),
     field(`${prefix}.department`, 'Response', 'string', true, '所属部门名称，未分配时为空字符串。', '研发部'),
     field(`${prefix}.title`, 'Response', 'string', true, '职位名称。', '后端工程师'),
+    field(`${prefix}.employmentType`, 'Response', 'string', true, '用工类型。', 'full_time'),
+    field(`${prefix}.hireDate`, 'Response', 'string', true, '入职日期；未设置时为空字符串。', '2026-08-01'),
+    field(`${prefix}.probationEndDate`, 'Response', 'string', true, '试用期结束日期；未设置时为空字符串。', '2026-11-01'),
+    field(`${prefix}.workLocation`, 'Response', 'string', true, '工作地点；未设置时为空字符串。', '北京'),
     field(`${prefix}.role`, 'Response', 'string', true, '员工角色。', 'employee'),
     field(`${prefix}.status`, 'Response', 'string', true, '员工状态。', 'enabled'),
+    field(`${prefix}.permissions`, 'Response', 'array<string>', true, '从 Permission 实时解析的 People 权限码。'),
     field(`${prefix}.mustChangePassword`, 'Response', 'boolean', true, '是否必须设置或修改密码。', 'false'),
     field(`${prefix}.passwordChangedAt`, 'Response', 'string|null', true, '最近密码修改时间，ISO 8601 格式。', '2026-08-07T10:00:00Z'),
     field(`${prefix}.lastLoginAt`, 'Response', 'string|null', true, '最近登录时间，ISO 8601 格式。', '2026-08-07T10:30:00Z'),
@@ -93,6 +99,7 @@ export const departmentInputFields: FieldDefinition[] = [
   field('code', 'Body', 'string', true, '部门编码，以小写字母开头，仅含小写字母、数字、下划线或连字符，最长 32。', 'platform'),
   field('name', 'Body', 'string', true, '部门名称，最长 100 字符。', '平台研发部'),
   field('description', 'Body', 'string', false, '部门描述，最长 500 字符。', '负责基础平台研发'),
+  field('leaderId', 'Body', 'string', false, '部门负责人公开 ID；必须是该部门的启用员工。', 'pep_leader'),
   field('status', 'Body', 'string', false, '状态：enabled 或 disabled；默认 enabled。', 'enabled'),
 ]
 
@@ -103,6 +110,8 @@ export function departmentResponseFields(prefix = 'data'): FieldDefinition[] {
     field(`${prefix}.code`, 'Response', 'string', true, '部门编码。', 'platform'),
     field(`${prefix}.name`, 'Response', 'string', true, '部门名称。', '平台研发部'),
     field(`${prefix}.description`, 'Response', 'string', true, '部门描述。', '负责基础平台研发'),
+    field(`${prefix}.leaderId`, 'Response', 'string', true, '部门负责人公开 ID；未配置时为空字符串。', 'pep_leader'),
+    field(`${prefix}.leaderName`, 'Response', 'string', true, '部门负责人姓名；未配置时为空字符串。', '李四'),
     field(`${prefix}.status`, 'Response', 'string', true, '部门状态。', 'enabled'),
     field(`${prefix}.employeeCount`, 'Response', 'integer', true, '直属该部门的员工数量。', '12'),
     field(`${prefix}.createdAt`, 'Response', 'string', true, '创建时间，ISO 8601 格式。', '2026-08-01T08:00:00Z'),
@@ -127,7 +136,7 @@ export const notFoundError: ErrorDefinition = {
 export const conflictError: ErrorDefinition = {
   httpStatus: 409,
   code: 'CONFLICT',
-  description: '工号、用户名、部门编码或部门名称已存在，或资源仍被关联。',
+  description: '用户名、部门编码或部门名称已存在，存在待审批申请，或资源仍被关联。',
   resolution: '使用唯一值；删除部门前先移除员工和下级部门关联。',
 }
 
@@ -327,7 +336,7 @@ print(response.json())`
 
 export const employeeExample = {
   id: 'pep_QK8dN2pT4sW6xY9z',
-  employeeNo: 'E10086',
+  employeeNo: 10086,
   username: 'zhangsan',
   displayName: '张三',
   email: 'zhangsan@example.com',
@@ -335,8 +344,13 @@ export const employeeExample = {
   departmentId: 'dep_platform',
   department: '平台研发部',
   title: '后端工程师',
+  employmentType: 'full_time',
+  hireDate: '2026-08-01',
+  probationEndDate: '2026-11-01',
+  workLocation: '北京',
   role: 'employee',
   status: 'enabled',
+  permissions: ['people.employee:view'],
   mustChangePassword: false,
   passwordChangedAt: '2026-08-07T10:00:00Z',
   lastLoginAt: '2026-08-07T10:30:00Z',
@@ -350,6 +364,8 @@ export const departmentExample = {
   code: 'platform',
   name: '平台研发部',
   description: '负责基础平台研发',
+  leaderId: 'pep_leader',
+  leaderName: '李四',
   status: 'enabled',
   employeeCount: 12,
   createdAt: '2026-08-01T08:00:00Z',

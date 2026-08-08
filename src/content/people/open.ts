@@ -26,10 +26,32 @@ const idField = field('id', 'Path', 'string', true, '员工或部门公开 ID。
 const mutationErrors = [...standardErrors, notFoundError, conflictError]
 
 const employeeBody = JSON.stringify({
-  employeeNo: 'E10086', username: 'zhangsan', displayName: '张三', email: 'zhangsan@example.com',
-  phone: '+86 13800138000', departmentId: 'dep_platform', title: '后端工程师', role: 'employee', status: 'enabled',
+  username: 'zhangsan', displayName: '张三', email: 'zhangsan@example.com', phone: '+86 13800138000',
+  departmentId: 'dep_platform', title: '后端工程师', employmentType: 'full_time', hireDate: '2026-08-01',
+  probationEndDate: '2026-11-01', workLocation: '北京',
 }, null, 2)
-const departmentBody = JSON.stringify({ parentId: '', code: 'platform', name: '平台研发部', description: '负责基础平台研发', status: 'enabled' }, null, 2)
+const departmentBody = JSON.stringify({ parentId: '', code: 'platform', name: '平台研发部', description: '负责基础平台研发', leaderId: 'pep_leader', status: 'enabled' }, null, 2)
+const departureExample = {
+  id: 'dpr_example', employeeId: employeeExample.id, employeeName: employeeExample.displayName, employeeNo: employeeExample.employeeNo,
+  departmentId: 'dep_platform', departmentName: '平台研发部', departmentLeaderId: 'pep_leader', reason: '个人发展',
+  lastWorkingDate: '2026-08-31', status: 'pending_manager', managerReviewerId: '', managerReviewerName: '',
+  managerReviewComment: '', managerReviewedAt: null, hrReviewerId: '', hrReviewerName: '', hrReviewComment: '', hrReviewedAt: null,
+  canManagerReview: false, canHrReview: false, canCancel: true, createdAt: '2026-08-08T08:00:00Z', updatedAt: '2026-08-08T08:00:00Z',
+}
+const departureFields: FieldDefinition[] = [
+  field('data.id', 'Response', 'string', true, '离职申请 ID。', 'dpr_example'),
+  field('data.employeeId', 'Response', 'string', true, '申请人员工公开 ID。', employeeExample.id),
+  field('data.employeeName', 'Response', 'string', true, '申请人姓名快照。', employeeExample.displayName),
+  field('data.employeeNo', 'Response', 'integer', true, '申请人员工号。', '10086'),
+  field('data.departmentId', 'Response', 'string', true, '申请时所在部门 ID。', 'dep_platform'),
+  field('data.departmentName', 'Response', 'string', true, '申请时所在部门名称。', '平台研发部'),
+  field('data.reason', 'Response', 'string', true, '离职原因。', '个人发展'),
+  field('data.lastWorkingDate', 'Response', 'string', true, '最后工作日，YYYY-MM-DD。', '2026-08-31'),
+  field('data.status', 'Response', 'string', true, 'pending_manager、pending_hr、approved、rejected 或 cancelled。', 'pending_manager'),
+  field('data.canManagerReview', 'Response', 'boolean', true, '当前用户是否可执行负责人审批。', 'false'),
+  field('data.canHrReview', 'Response', 'boolean', true, '当前用户是否可执行 HR 终审。', 'false'),
+  field('data.canCancel', 'Response', 'boolean', true, '当前用户是否可撤回。', 'true'),
+]
 
 const csrfDocument = peopleEndpoint({
   audience: 'open', id: 'people-csrf', group: '登录与会话', title: '获取 CSRF Token',
@@ -85,11 +107,11 @@ const changePasswordDocument = peopleEndpoint({
 
 const listEmployeesDocument = peopleEndpoint({
   audience: 'open', id: 'people-list-employees', group: '员工管理', title: '查询员工列表',
-  summary: '分页查询员工目录；后台管理员可使用会话，服务端集成可使用 employees.read OAuth Token。', method: 'GET', path: '/employees', examplePath: '/employees?q=zhang&page=1&pageSize=20', auth: 'bearer',
-  permissionRequirement: '管理员 People 会话，或包含 employees.read scope 的 OAuth Bearer Token。',
+  summary: '分页查询员工目录；具备 Permission 授权的用户可使用会话，服务端集成可使用 employees.read OAuth Token。', method: 'GET', path: '/employees', examplePath: '/employees?q=zhang&page=1&pageSize=20', auth: 'bearer',
+  permissionRequirement: 'People 会话具备 people.employee:view，或 Bearer Token 包含 employees.read scope。',
   requestFields: [
     field('Authorization', 'Header', 'string', false, '服务端调用时使用包含 employees.read scope 的 OAuth Bearer Token；与管理员 Cookie 二选一。', 'Bearer pat_...'),
-    field('Cookie', 'Header', 'string', false, '后台浏览器调用时使用管理员 PEOPLE_SESSION；与 Bearer Token 二选一。', 'PEOPLE_SESSION=<token>'),
+    field('Cookie', 'Header', 'string', false, '后台浏览器调用时使用有权的 PEOPLE_SESSION；与 Bearer Token 二选一。', 'PEOPLE_SESSION=<token>'),
     field('q', 'Query', 'string', false, '按工号、用户名、姓名、邮箱或部门名称模糊搜索。', 'zhang'),
     field('page', 'Query', 'integer', false, '页码，最小为 1；无效值回退为 1。', '1'),
     field('pageSize', 'Query', 'integer', false, '每页数量，1-100；无效值回退为 20。', '20'),
@@ -107,16 +129,16 @@ const listEmployeesDocument = peopleEndpoint({
 
 const createEmployeeDocument = peopleEndpoint({
   audience: 'open', id: 'people-create-employee', group: '员工管理', title: '创建员工',
-  summary: '由管理员创建员工账号；不设置初始密码，新员工首次登录后必须设置密码。', method: 'POST', path: '/employees', auth: 'session-csrf',
-  permissionRequirement: 'People 管理员会话和 CSRF Token。', requestFields: [...csrfFields, ...employeeInputFields],
+  summary: '创建普通员工账号；员工号由数据库自增生成，不设置初始密码。', method: 'POST', path: '/employees', auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.employee:manage，并完成 CSRF 校验。', requestFields: [...csrfFields, ...employeeInputFields],
   responseFields: [...envelopeFields, ...employeeResponseFields()], errors: mutationErrors, requestBody: employeeBody,
   responseExample: envelope({ ...employeeExample, mustChangePassword: true, passwordChangedAt: null, lastLoginAt: null }, '创建成功'),
 })
 
 const updateEmployeeDocument = peopleEndpoint({
   audience: 'open', id: 'people-update-employee', group: '员工管理', title: '更新员工',
-  summary: '更新员工身份、部门、角色与状态；内置 admin 账号的用户名、角色和状态不可改变。', method: 'PUT', path: '/employees/:id', examplePath: '/employees/pep_QK8dN2pT4sW6xY9z', auth: 'session-csrf',
-  permissionRequirement: 'People 管理员会话和 CSRF Token。', requestFields: [...csrfFields, idField, ...employeeInputFields],
+  summary: '更新员工基础档案和任职信息；工号、角色和账号状态不能通过本接口变更。', method: 'PUT', path: '/employees/:id', examplePath: '/employees/pep_QK8dN2pT4sW6xY9z', auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.employee:manage，并完成 CSRF 校验。', requestFields: [...csrfFields, idField, ...employeeInputFields],
   responseFields: [...envelopeFields, ...employeeResponseFields()], errors: mutationErrors, requestBody: employeeBody,
   responseExample: envelope(employeeExample),
 })
@@ -124,15 +146,38 @@ const updateEmployeeDocument = peopleEndpoint({
 const deleteEmployeeDocument = peopleEndpoint({
   audience: 'open', id: 'people-delete-employee', group: '员工管理', title: '删除员工',
   summary: '删除员工及其关联会话；不能删除当前登录账号或内置 admin。', method: 'DELETE', path: '/employees/:id', examplePath: '/employees/pep_QK8dN2pT4sW6xY9z', auth: 'session-csrf',
-  permissionRequirement: 'People 管理员会话和 CSRF Token。', requestFields: [...csrfFields, idField],
+  permissionRequirement: 'People 会话具备 people.employee:manage，并完成 CSRF 校验。', requestFields: [...csrfFields, idField],
   responseFields: [...envelopeFields, field('data.deleted', 'Response', 'boolean', true, '是否删除成功。', 'true')], errors: mutationErrors,
   responseExample: envelope({ deleted: true }),
+})
+
+const resetEmployeePasswordDocument = peopleEndpoint({
+  audience: 'open', id: 'people-reset-employee-password', group: '员工管理', title: '重置员工密码',
+  summary: '清空员工密码、撤销现有会话，并让账号回到首次设置密码状态。', method: 'POST', path: '/employees/:id/reset-password', examplePath: '/employees/pep_QK8dN2pT4sW6xY9z/reset-password', auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.employee:reset，并完成 CSRF 校验。', requestFields: [...csrfFields, idField],
+  responseFields: [...envelopeFields, field('data.reset', 'Response', 'boolean', true, '是否已重置。', 'true')], errors: mutationErrors,
+  responseExample: envelope({ reset: true }),
+})
+
+const setEmployeeEnabledDocument = peopleEndpoint({
+  audience: 'open', id: 'people-set-employee-enabled', group: '员工管理', title: '停用或启用员工',
+  summary: '变更账号状态；停用时同步撤销全部 People 会话。', method: 'PUT', path: '/employees/:id/enabled', examplePath: '/employees/pep_QK8dN2pT4sW6xY9z/enabled', auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.employee:disable，并完成 CSRF 校验。', requestFields: [...csrfFields, idField, field('enabled', 'Body', 'boolean', true, 'true 启用，false 停用。', 'false')],
+  responseFields: [...envelopeFields, ...employeeResponseFields()], errors: mutationErrors, requestBody: JSON.stringify({ enabled: false }, null, 2),
+  responseExample: envelope({ ...employeeExample, status: 'disabled' }),
+})
+
+const hrDashboardDocument = peopleEndpoint({
+  audience: 'open', id: 'people-hr-dashboard', group: '人事概览', title: '获取人事概览', summary: '返回人员状态、部门、试用期、近期入职和待办离职统计。',
+  method: 'GET', path: '/hr/dashboard', auth: 'session', permissionRequirement: 'People 会话具备 people.dashboard:view。', requestFields: [sessionField],
+  responseFields: [...envelopeFields, field('data.totalEmployees', 'Response', 'integer', true, '员工总数。', '120'), field('data.enabledEmployees', 'Response', 'integer', true, '在职员工数。', '116'), field('data.disabledEmployees', 'Response', 'integer', true, '停用员工数。', '4'), field('data.departments', 'Response', 'integer', true, '启用部门数。', '9'), field('data.pendingDepartures', 'Response', 'integer', true, '待审批离职数。', '2'), field('data.probationEmployees', 'Response', 'integer', true, '试用期员工数。', '8'), field('data.recentHires', 'Response', 'integer', true, '近 30 天入职数。', '3')],
+  responseExample: envelope({ totalEmployees: 120, enabledEmployees: 116, disabledEmployees: 4, departments: 9, pendingDepartures: 2, probationEmployees: 8, recentHires: 3 }),
 })
 
 const listDepartmentsDocument = peopleEndpoint({
   audience: 'open', id: 'people-list-departments', group: '部门管理', title: '查询部门列表',
   summary: '查询全部部门及直属员工数量，启用部门优先并按名称排序。', method: 'GET', path: '/departments', examplePath: '/departments?q=platform', auth: 'session',
-  permissionRequirement: 'People 管理员会话。', requestFields: [sessionField, field('q', 'Query', 'string', false, '按部门编码或名称模糊搜索。', 'platform')],
+  permissionRequirement: '任意有效 People 会话。', requestFields: [sessionField, field('q', 'Query', 'string', false, '按部门编码或名称模糊搜索。', 'platform')],
   responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '部门列表。'), ...departmentResponseFields('data[]')],
   responseExample: envelope([departmentExample]),
 })
@@ -140,7 +185,7 @@ const listDepartmentsDocument = peopleEndpoint({
 const createDepartmentDocument = peopleEndpoint({
   audience: 'open', id: 'people-create-department', group: '部门管理', title: '创建部门',
   summary: '创建顶级或子部门，并校验编码、名称和父部门关系。', method: 'POST', path: '/departments', auth: 'session-csrf',
-  permissionRequirement: 'People 管理员会话和 CSRF Token。', requestFields: [...csrfFields, ...departmentInputFields],
+  permissionRequirement: 'People 会话具备 people.department:manage，并完成 CSRF 校验。', requestFields: [...csrfFields, ...departmentInputFields],
   responseFields: [...envelopeFields, ...departmentResponseFields()], errors: mutationErrors, requestBody: departmentBody,
   responseExample: envelope(departmentExample, '创建成功'),
 })
@@ -148,7 +193,7 @@ const createDepartmentDocument = peopleEndpoint({
 const updateDepartmentDocument = peopleEndpoint({
   audience: 'open', id: 'people-update-department', group: '部门管理', title: '更新部门',
   summary: '更新部门及父子关系；名称变化会同步到关联员工，不允许自引用或形成循环。', method: 'PUT', path: '/departments/:id', examplePath: '/departments/dep_platform', auth: 'session-csrf',
-  permissionRequirement: 'People 管理员会话和 CSRF Token。',
+  permissionRequirement: 'People 会话具备 people.department:manage，并完成 CSRF 校验。',
   requestFields: [...csrfFields, field('id', 'Path', 'string', true, '部门 ID。', 'dep_platform'), ...departmentInputFields],
   responseFields: [...envelopeFields, ...departmentResponseFields()], errors: mutationErrors, requestBody: departmentBody,
   responseExample: envelope(departmentExample),
@@ -157,10 +202,64 @@ const updateDepartmentDocument = peopleEndpoint({
 const deleteDepartmentDocument = peopleEndpoint({
   audience: 'open', id: 'people-delete-department', group: '部门管理', title: '删除部门',
   summary: '删除空部门；仍有关联员工或下级部门时拒绝删除。', method: 'DELETE', path: '/departments/:id', examplePath: '/departments/dep_platform', auth: 'session-csrf',
-  permissionRequirement: 'People 管理员会话和 CSRF Token。',
+  permissionRequirement: 'People 会话具备 people.department:manage，并完成 CSRF 校验。',
   requestFields: [...csrfFields, field('id', 'Path', 'string', true, '部门 ID。', 'dep_platform')],
   responseFields: [...envelopeFields, field('data.deleted', 'Response', 'boolean', true, '是否删除成功。', 'true')], errors: mutationErrors,
   responseExample: envelope({ deleted: true }),
+})
+
+const listDeparturesDocument = peopleEndpoint({
+  audience: 'open', id: 'people-list-departures', group: '离职审批', title: '查询离职申请', summary: '普通员工看到本人申请和本人负责部门的申请；HR 看到全部状态记录。',
+  method: 'GET', path: '/departures', auth: 'session', permissionRequirement: '任意有效 People 会话；people.departure:review 可查看全量。', requestFields: [sessionField],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '当前用户可见的离职申请。'), ...departureFields.map((item) => ({ ...item, name: item.name.replace('data.', 'data[].') }))],
+  responseExample: envelope([departureExample]),
+})
+
+const createDepartureDocument = peopleEndpoint({
+  audience: 'open', id: 'people-create-departure', group: '离职审批', title: '发起离职申请', summary: '为当前非管理员员工发起离职申请，并通知所在部门负责人。',
+  method: 'POST', path: '/departures', auth: 'session-csrf', permissionRequirement: '任意非管理员在职员工；所在部门必须配置其他员工作为负责人。',
+  requestFields: [...csrfFields, field('reason', 'Body', 'string', true, '离职原因，最长 1000 字符。', '个人发展'), field('lastWorkingDate', 'Body', 'string', true, '最后工作日，不得早于今天。', '2026-08-31')],
+  responseFields: [...envelopeFields, ...departureFields], errors: mutationErrors, requestBody: JSON.stringify({ reason: '个人发展', lastWorkingDate: '2026-08-31' }, null, 2), responseExample: envelope(departureExample, '创建成功'),
+})
+
+function reviewDepartureDocument(stage: 'manager' | 'hr'): EndpointDocument {
+  const hr = stage === 'hr'
+  return peopleEndpoint({
+    audience: 'open', id: `people-review-departure-${stage}`, group: '离职审批', title: hr ? 'HR 审批离职' : '负责人审批离职',
+    summary: hr ? '执行离职终审；通过后立即停用申请人账号并撤销会话和 OAuth Token。' : '部门负责人执行一审；通过后流转 HR，驳回则结束。',
+    method: 'POST', path: `/departures/:id/${stage}-review`, examplePath: `/departures/dpr_example/${stage}-review`, auth: 'session-csrf',
+    permissionRequirement: hr ? 'People 会话具备 people.departure:review。' : '当前用户必须是申请快照中的部门负责人。',
+    requestFields: [...csrfFields, field('id', 'Path', 'string', true, '离职申请 ID。', 'dpr_example'), field('approved', 'Body', 'boolean', true, '是否通过。', 'true'), field('comment', 'Body', 'string', false, '审批意见，最长 500 字符。', '同意')],
+    responseFields: [...envelopeFields, ...departureFields], errors: mutationErrors, requestBody: JSON.stringify({ approved: true, comment: '同意' }, null, 2),
+    responseExample: envelope({ ...departureExample, status: hr ? 'approved' : 'pending_hr' }),
+  })
+}
+
+const cancelDepartureDocument = peopleEndpoint({
+  audience: 'open', id: 'people-cancel-departure', group: '离职审批', title: '撤回离职申请', summary: '申请人在负责人审批前撤回自己的离职申请。',
+  method: 'POST', path: '/departures/:id/cancel', examplePath: '/departures/dpr_example/cancel', auth: 'session-csrf', permissionRequirement: '申请本人且状态为 pending_manager。',
+  requestFields: [...csrfFields, field('id', 'Path', 'string', true, '离职申请 ID。', 'dpr_example')], responseFields: [...envelopeFields, field('data.cancelled', 'Response', 'boolean', true, '是否已撤回。', 'true')], errors: mutationErrors, responseExample: envelope({ cancelled: true }),
+})
+
+const listNotificationsDocument = peopleEndpoint({
+  audience: 'open', id: 'people-list-notifications', group: '通知', title: '查询通知', summary: '查询当前员工的审批待办和审批结果通知。', method: 'GET', path: '/notifications', examplePath: '/notifications?unread=true', auth: 'session',
+  permissionRequirement: '任意有效 People 会话。', requestFields: [sessionField, field('unread', 'Query', 'boolean', false, '是否仅返回未读通知。', 'true')],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '最多 100 条通知。')], responseExample: envelope([{ id: 'ntf_example', type: 'departure_review', title: '新的离职申请待审批', content: '张三提交了离职申请', resourceType: 'departure', resourceId: 'dpr_example', readAt: null, createdAt: '2026-08-08T08:00:00Z' }]),
+})
+
+const notificationSummaryDocument = peopleEndpoint({
+  audience: 'open', id: 'people-notification-summary', group: '通知', title: '获取通知数字', summary: '返回右上角数字所需的未读通知和当前可处理审批数量。', method: 'GET', path: '/notifications/summary', auth: 'session',
+  permissionRequirement: '任意有效 People 会话。', requestFields: [sessionField], responseFields: [...envelopeFields, field('data.unread', 'Response', 'integer', true, '未读直接通知数。', '1'), field('data.pendingTasks', 'Response', 'integer', true, '当前可处理审批数。', '2'), field('data.total', 'Response', 'integer', true, '两者合计。', '3')], responseExample: envelope({ unread: 1, pendingTasks: 2, total: 3 }),
+})
+
+const readNotificationDocument = peopleEndpoint({
+  audience: 'open', id: 'people-read-notification', group: '通知', title: '标记通知已读', summary: '把当前员工的一条通知标记为已读。', method: 'POST', path: '/notifications/:id/read', examplePath: '/notifications/ntf_example/read', auth: 'session-csrf',
+  permissionRequirement: '通知接收人本人。', requestFields: [...csrfFields, field('id', 'Path', 'string', true, '通知 ID。', 'ntf_example')], responseFields: [...envelopeFields, field('data.read', 'Response', 'boolean', true, '是否已读。', 'true')], errors: mutationErrors, responseExample: envelope({ read: true }),
+})
+
+const readAllNotificationsDocument = peopleEndpoint({
+  audience: 'open', id: 'people-read-all-notifications', group: '通知', title: '全部通知已读', summary: '把当前员工的全部直接通知标记为已读。', method: 'POST', path: '/notifications/read-all', auth: 'session-csrf',
+  permissionRequirement: '任意有效 People 会话。', requestFields: csrfFields, responseFields: [...envelopeFields, field('data.read', 'Response', 'boolean', true, '是否已处理。', 'true')], responseExample: envelope({ read: true }),
 })
 
 const authorizeDocument = peopleEndpoint({
@@ -226,10 +325,22 @@ export const peopleOpenEndpoints: EndpointDocument[] = [
   createEmployeeDocument,
   updateEmployeeDocument,
   deleteEmployeeDocument,
+  resetEmployeePasswordDocument,
+  setEmployeeEnabledDocument,
+  hrDashboardDocument,
   listDepartmentsDocument,
   createDepartmentDocument,
   updateDepartmentDocument,
   deleteDepartmentDocument,
+  listDeparturesDocument,
+  createDepartureDocument,
+  reviewDepartureDocument('manager'),
+  reviewDepartureDocument('hr'),
+  cancelDepartureDocument,
+  listNotificationsDocument,
+  notificationSummaryDocument,
+  readNotificationDocument,
+  readAllNotificationsDocument,
   authorizeDocument,
   tokenDocument,
   userinfoDocument,
