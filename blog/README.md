@@ -51,6 +51,21 @@ GARAGE_CONFIG_FILE=/data00/home/liuxing.110/code/blog/.runtime/garage.toml \
 
 浏览器不会接触 Gateway AK/SK。Blog BFF 先验证本地 People OAuth 会话或 Admin UI 的 Permission 令牌；Admin UI 读请求要求 `svc.inner.blog:view`，写请求要求 `svc.inner.blog:manage`。随后 BFF 把规范请求体签名后发送到 Gateway Inner；Blog 内部 API 还会验证 Gateway 转发时生成的上游签名与 nonce，不能被浏览器直接绕过。
 
+## 审核记录与通知
+
+文章首次发布或已发布文章再次提交修改时，Blog 会保存一条独立的审核记录。发起人可在“审核记录”页面查看自己的全部提交，包括首次发布/修改版本、提交时间、当前状态、审核结果、驳回原因和处理时间；具备审核权限的用户还可在同一页面切换到待审核队列。
+
+审核通过或驳回后，系统会为发起人生成持久化通知。独立 Blog UI 与统一 Admin UI 均会在顶部审核铃铛显示未读数量并弹出结果提示，进入审核记录页后标记为已读。历史数据没有独立记录时，服务会根据现有文章和待审修改生成兼容记录。
+
+| 方法 | BFF 路径 | 用途 | 权限 |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/reviews/mine` | 查询当前用户发起的审核记录 | Blog 查看权限 |
+| `GET` | `/api/v1/reviews/notifications` | 查询当前用户的审核结果通知 | Blog 查看权限 |
+| `POST` | `/api/v1/reviews/notifications/read` | 将当前用户的审核结果通知标记为已读 | Blog 查看权限 |
+| `GET` | `/api/v1/reviews` | 查询待审核队列 | Blog 审核权限 |
+
+审核状态包括 `pending`（审核中）、`approved`（已通过）、`rejected`（已驳回）和 `canceled`（已撤回）。驳回操作必须填写原因，该原因对投稿人可见。
+
 ## 启动与验证
 
 ```bash
