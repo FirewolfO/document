@@ -28,7 +28,8 @@ const mutationErrors = [...standardErrors, notFoundError, conflictError]
 const employeeBody = JSON.stringify({
   username: 'zhangsan', displayName: '张三', email: 'zhangsan@example.com', phone: '+86 13800138000',
   departmentId: 'dep_platform', title: '后端工程师', employmentType: 'full_time', hireDate: '2026-08-01',
-  probationEndDate: '2026-11-01', workLocation: '北京',
+  probationEndDate: '2026-11-01', workLocation: '北京', emergencyContactName: '李四',
+  emergencyContactPhone: '13900139000', emergencyContactRelation: '配偶',
 }, null, 2)
 const departmentBody = JSON.stringify({ parentId: '', code: 'platform', name: '平台研发部', description: '负责基础平台研发', leaderId: 'pep_leader', status: 'enabled' }, null, 2)
 const departureExample = {
@@ -51,6 +52,96 @@ const departureFields: FieldDefinition[] = [
   field('data.canManagerReview', 'Response', 'boolean', true, '当前用户是否可执行负责人审批。', 'false'),
   field('data.canHrReview', 'Response', 'boolean', true, '当前用户是否可执行 HR 终审。', 'false'),
   field('data.canCancel', 'Response', 'boolean', true, '当前用户是否可撤回。', 'true'),
+]
+
+const approvalExample = {
+  id: 'apr_example', type: 'transfer', title: '岗位异动申请', summary: '张三申请调整至 数据平台部 / 高级后端工程师',
+  applicantId: employeeExample.id, applicantName: employeeExample.displayName, applicantNo: employeeExample.employeeNo,
+  departmentId: 'dep_platform', departmentName: '平台研发部',
+  data: { targetDepartmentId: 'dep_data', targetDepartmentName: '数据平台部', targetTitle: '高级后端工程师', effectiveDate: '2026-09-01', reason: '组织调整' },
+  status: 'pending', currentStep: 1, totalSteps: 2, currentStepName: '部门负责人审批',
+  steps: [{ id: 1, sequence: 1, name: '部门负责人审批', approverId: 'pep_leader', permissionCode: '', status: 'pending', reviewerId: '', reviewerName: '', comment: '', reviewedAt: null }],
+  canReview: false, canCancel: true, submittedAt: '2026-08-09T08:00:00Z', completedAt: null,
+  createdAt: '2026-08-09T08:00:00Z', updatedAt: '2026-08-09T08:00:00Z',
+}
+const approvalFields: FieldDefinition[] = [
+  field('data.id', 'Response', 'string', true, '审批流程 ID。', 'apr_example'),
+  field('data.type', 'Response', 'string', true, '流程类型：leave、transfer 或 departure。', 'transfer'),
+  field('data.title', 'Response', 'string', true, '流程标题。', '岗位异动申请'),
+  field('data.summary', 'Response', 'string', true, '可直接展示的流程摘要。', '张三申请调整至数据平台部'),
+  field('data.applicantId', 'Response', 'string', true, '申请人员工公开 ID。', employeeExample.id),
+  field('data.applicantName', 'Response', 'string', true, '申请人姓名快照。', employeeExample.displayName),
+  field('data.applicantNo', 'Response', 'integer', true, '申请人员工号。', '10086'),
+  field('data.departmentId', 'Response', 'string', true, '发起时所属部门 ID。', 'dep_platform'),
+  field('data.departmentName', 'Response', 'string', true, '发起时所属部门名称。', '平台研发部'),
+  field('data.data', 'Response', 'object', true, '类型专属数据；字段与创建审批时对应。'),
+  field('data.status', 'Response', 'string', true, 'pending、approved、rejected 或 cancelled。', 'pending'),
+  field('data.currentStep', 'Response', 'integer', true, '当前步骤序号，从 1 开始。', '1'),
+  field('data.totalSteps', 'Response', 'integer', true, '审批步骤总数。', '2'),
+  field('data.currentStepName', 'Response', 'string', true, '当前步骤名称；流程结束后为空。', '部门负责人审批'),
+  field('data.steps', 'Response', 'array<object>', true, '有序审批步骤，包含审批人、权限要求、状态、审批意见和时间。'),
+  field('data.canReview', 'Response', 'boolean', true, '当前用户是否可以处理当前步骤。', 'false'),
+  field('data.canCancel', 'Response', 'boolean', true, '当前用户是否可以撤回。', 'true'),
+  field('data.submittedAt', 'Response', 'string', true, '提交时间，ISO 8601。', '2026-08-09T08:00:00Z'),
+  field('data.completedAt', 'Response', 'string|null', true, '流程结束时间。', 'null'),
+]
+
+const contractExample = {
+  id: 'ctr_example', employeeId: employeeExample.id, employeeName: employeeExample.displayName, type: 'fixed_term',
+  startDate: '2026-08-01', endDate: '2029-07-31', status: 'active', documentName: '张三劳动合同.pdf', note: '首签三年',
+  createdAt: '2026-08-09T08:00:00Z', updatedAt: '2026-08-09T08:00:00Z',
+}
+const contractFields: FieldDefinition[] = [
+  field('data.id', 'Response', 'string', true, '合同记录 ID。', 'ctr_example'),
+  field('data.employeeId', 'Response', 'string', true, '员工公开 ID。', employeeExample.id),
+  field('data.employeeName', 'Response', 'string', true, '员工姓名快照。', employeeExample.displayName),
+  field('data.type', 'Response', 'string', true, 'fixed_term、open_ended、internship 或 service。', 'fixed_term'),
+  field('data.startDate', 'Response', 'string', true, '开始日期，YYYY-MM-DD。', '2026-08-01'),
+  field('data.endDate', 'Response', 'string', true, '结束日期；无固定期限合同可为空。', '2029-07-31'),
+  field('data.status', 'Response', 'string', true, 'active、ended 或 terminated。', 'active'),
+  field('data.documentName', 'Response', 'string', true, '关联电子合同文件名。', '张三劳动合同.pdf'),
+  field('data.note', 'Response', 'string', true, '合同备注。', '首签三年'),
+]
+const contractInputFields: FieldDefinition[] = [
+  field('type', 'Body', 'string', true, 'fixed_term、open_ended、internship 或 service。', 'fixed_term'),
+  field('startDate', 'Body', 'string', true, '开始日期，YYYY-MM-DD。', '2026-08-01'),
+  field('endDate', 'Body', 'string', false, '结束日期；open_ended 可为空，其他类型必填且不能早于开始日期。', '2029-07-31'),
+  field('status', 'Body', 'string', true, 'active、ended 或 terminated；同一员工只能有一份 active 合同。', 'active'),
+  field('documentName', 'Body', 'string', false, '关联电子合同文件名，最长 255 字符。', '张三劳动合同.pdf'),
+  field('note', 'Body', 'string', false, '合同备注，最长 1000 字符。', '首签三年'),
+]
+
+const goalExample = {
+  id: 'gol_example', employeeId: employeeExample.id, employeeName: employeeExample.displayName, departmentId: 'dep_platform',
+  cycle: '2026-H2', title: '提升核心服务可靠性', description: '将关键链路可用性提升至 99.95%', dueDate: '2026-12-31',
+  weight: 40, progress: 30, status: 'active', managerComment: '按季度检查关键指标', canEdit: true, canReview: false,
+  createdAt: '2026-08-09T08:00:00Z', updatedAt: '2026-08-09T08:00:00Z',
+}
+const goalFields: FieldDefinition[] = [
+  field('data.id', 'Response', 'string', true, '绩效目标 ID。', 'gol_example'),
+  field('data.employeeId', 'Response', 'string', true, '目标归属员工公开 ID。', employeeExample.id),
+  field('data.employeeName', 'Response', 'string', true, '员工姓名。', employeeExample.displayName),
+  field('data.departmentId', 'Response', 'string', true, '目标所属部门 ID。', 'dep_platform'),
+  field('data.cycle', 'Response', 'string', true, '绩效周期。', '2026-H2'),
+  field('data.title', 'Response', 'string', true, '目标标题。', '提升核心服务可靠性'),
+  field('data.description', 'Response', 'string', true, '目标说明。'),
+  field('data.dueDate', 'Response', 'string', true, '目标截止日期。', '2026-12-31'),
+  field('data.weight', 'Response', 'integer', true, '目标权重，1-100。', '40'),
+  field('data.progress', 'Response', 'integer', true, '完成进度，0-100；100 会自动转为 completed。', '30'),
+  field('data.status', 'Response', 'string', true, 'draft、active、completed 或 cancelled。', 'active'),
+  field('data.managerComment', 'Response', 'string', true, '直属部门负责人或 HR 的反馈。'),
+  field('data.canEdit', 'Response', 'boolean', true, '当前用户是否可维护目标。', 'true'),
+  field('data.canReview', 'Response', 'boolean', true, '当前用户是否可填写管理者反馈。', 'false'),
+]
+const goalInputFields: FieldDefinition[] = [
+  field('cycle', 'Body', 'string', true, '绩效周期，最长 32 字符。', '2026-H2'),
+  field('title', 'Body', 'string', true, '目标标题，最长 160 字符。', '提升核心服务可靠性'),
+  field('description', 'Body', 'string', false, '目标说明，最长 1000 字符。'),
+  field('dueDate', 'Body', 'string', true, '截止日期，YYYY-MM-DD。', '2026-12-31'),
+  field('weight', 'Body', 'integer', true, '目标权重，1-100。', '40'),
+  field('progress', 'Body', 'integer', true, '完成进度，0-100。', '30'),
+  field('status', 'Body', 'string', true, 'draft、active、completed 或 cancelled。', 'active'),
+  field('managerComment', 'Body', 'string', false, '管理者反馈；员工本人提交时不会写入。'),
 ]
 
 const csrfDocument = peopleEndpoint({
@@ -167,11 +258,71 @@ const setEmployeeEnabledDocument = peopleEndpoint({
   responseExample: envelope({ ...employeeExample, status: 'disabled' }),
 })
 
+const updateProfileDocument = peopleEndpoint({
+  audience: 'open', id: 'people-update-profile', group: '员工自助', title: '更新个人联系方式',
+  summary: '当前员工维护自己的邮箱、电话和紧急联系人，不允许通过本接口更改组织任职信息。', method: 'PUT', path: '/profile', auth: 'session-csrf',
+  permissionRequirement: '任意有效 People 会话并完成 CSRF 校验。',
+  requestFields: [
+    ...csrfFields,
+    field('email', 'Body', 'string', false, '邮箱，最长 255 字符。', 'zhangsan@example.com'),
+    field('phone', 'Body', 'string', false, '联系电话，最长 32 字符。', '+86 13800138000'),
+    field('emergencyContactName', 'Body', 'string', false, '紧急联系人姓名，最长 100 字符。', '李四'),
+    field('emergencyContactPhone', 'Body', 'string', false, '紧急联系人电话，最长 32 字符。', '13900139000'),
+    field('emergencyContactRelation', 'Body', 'string', false, '与紧急联系人的关系，最长 50 字符。', '配偶'),
+  ],
+  responseFields: [...envelopeFields, ...employeeResponseFields()],
+  requestBody: JSON.stringify({ email: 'zhangsan@example.com', phone: '+86 13800138000', emergencyContactName: '李四', emergencyContactPhone: '13900139000', emergencyContactRelation: '配偶' }, null, 2),
+  responseExample: envelope(employeeExample), errors: mutationErrors,
+})
+
+const employmentEventsDocument = peopleEndpoint({
+  audience: 'open', id: 'people-employment-events', group: '员工生命周期', title: '查询任职轨迹',
+  summary: '按生效日期倒序返回入职、调动、晋升、离职及账号启停事件。', method: 'GET', path: '/employees/:id/events', examplePath: `/employees/${employeeExample.id}/events`, auth: 'session',
+  permissionRequirement: '员工可查看本人；查看他人需要 people.employee:view。', requestFields: [sessionField, idField],
+  responseFields: [
+    ...envelopeFields,
+    field('data', 'Response', 'array<object>', true, '任职事件列表。'),
+    field('data[].id', 'Response', 'string', true, '事件 ID。', 'evt_example'),
+    field('data[].employeeId', 'Response', 'string', true, '员工公开 ID。', employeeExample.id),
+    field('data[].type', 'Response', 'string', true, 'hire、transfer、promotion、departure、enable 或 disable。', 'transfer'),
+    field('data[].effectiveDate', 'Response', 'string', true, '业务生效日期。', '2026-09-01'),
+    field('data[].fromDepartmentId', 'Response', 'string', true, '变更前部门 ID。', 'dep_platform'),
+    field('data[].toDepartmentId', 'Response', 'string', true, '变更后部门 ID。', 'dep_data'),
+    field('data[].fromTitle', 'Response', 'string', true, '变更前职务。', '后端工程师'),
+    field('data[].toTitle', 'Response', 'string', true, '变更后职务。', '高级后端工程师'),
+    field('data[].note', 'Response', 'string', true, '事件说明。', '组织调整'),
+    field('data[].approvalId', 'Response', 'string', true, '关联审批 ID；手工变更时可为空。', 'apr_example'),
+  ],
+  responseExample: envelope([{ id: 'evt_example', employeeId: employeeExample.id, type: 'transfer', effectiveDate: '2026-09-01', fromDepartmentId: 'dep_platform', fromDepartment: '平台研发部', toDepartmentId: 'dep_data', toDepartment: '数据平台部', fromTitle: '后端工程师', toTitle: '高级后端工程师', note: '组织调整', approvalId: 'apr_example', createdAt: '2026-08-09T08:00:00Z' }]),
+})
+
 const hrDashboardDocument = peopleEndpoint({
-  audience: 'open', id: 'people-hr-dashboard', group: '人事概览', title: '获取人事概览', summary: '返回人员状态、部门、试用期、近期入职和待办离职统计。',
+  audience: 'open', id: 'people-hr-dashboard', group: '人事概览', title: '获取人事概览', summary: '返回人员、组织、审批、假勤、合同和绩效风险指标及分布。',
   method: 'GET', path: '/hr/dashboard', auth: 'session', permissionRequirement: 'People 会话具备 people.dashboard:view。', requestFields: [sessionField],
-  responseFields: [...envelopeFields, field('data.totalEmployees', 'Response', 'integer', true, '员工总数。', '120'), field('data.enabledEmployees', 'Response', 'integer', true, '在职员工数。', '116'), field('data.disabledEmployees', 'Response', 'integer', true, '停用员工数。', '4'), field('data.departments', 'Response', 'integer', true, '启用部门数。', '9'), field('data.pendingDepartures', 'Response', 'integer', true, '待审批离职数。', '2'), field('data.probationEmployees', 'Response', 'integer', true, '试用期员工数。', '8'), field('data.recentHires', 'Response', 'integer', true, '近 30 天入职数。', '3')],
-  responseExample: envelope({ totalEmployees: 120, enabledEmployees: 116, disabledEmployees: 4, departments: 9, pendingDepartures: 2, probationEmployees: 8, recentHires: 3 }),
+  responseFields: [
+    ...envelopeFields,
+    field('data.totalEmployees', 'Response', 'integer', true, '员工总数。', '120'),
+    field('data.enabledEmployees', 'Response', 'integer', true, '在职员工数。', '116'),
+    field('data.disabledEmployees', 'Response', 'integer', true, '停用员工数。', '4'),
+    field('data.departments', 'Response', 'integer', true, '启用部门数。', '9'),
+    field('data.pendingDepartures', 'Response', 'integer', true, '待审批离职数。', '2'),
+    field('data.pendingApprovals', 'Response', 'integer', true, '全部类型的待审批流程数。', '5'),
+    field('data.probationEmployees', 'Response', 'integer', true, '试用期员工数。', '8'),
+    field('data.recentHires', 'Response', 'integer', true, '近 30 天入职数。', '3'),
+    field('data.employeesOnLeave', 'Response', 'integer', true, '当前正在休假的员工数。', '2'),
+    field('data.contractsExpiring', 'Response', 'integer', true, '未来两个月内到期的生效合同数。', '4'),
+    field('data.activeGoals', 'Response', 'integer', true, '进行中的绩效目标数。', '38'),
+    field('data.overdueGoals', 'Response', 'integer', true, '已逾期且未完成的绩效目标数。', '3'),
+    field('data.departmentDistribution', 'Response', 'array<object>', true, '在职员工部门分布；元素包含 name 和 count。'),
+    field('data.employmentTypeDistribution', 'Response', 'array<object>', true, '在职员工用工类型分布；元素包含 name 和 count。'),
+    field('data.approvalDistribution', 'Response', 'array<object>', true, '待审批流程类型分布；元素包含 name 和 count。'),
+  ],
+  responseExample: envelope({
+    totalEmployees: 120, enabledEmployees: 116, disabledEmployees: 4, departments: 9, pendingDepartures: 2,
+    pendingApprovals: 5, probationEmployees: 8, recentHires: 3, employeesOnLeave: 2, contractsExpiring: 4,
+    activeGoals: 38, overdueGoals: 3, departmentDistribution: [{ name: '平台研发部', count: 32 }],
+    employmentTypeDistribution: [{ name: 'full_time', count: 108 }], approvalDistribution: [{ name: 'leave', count: 3 }],
+  }),
 })
 
 const listDepartmentsDocument = peopleEndpoint({
@@ -208,15 +359,168 @@ const deleteDepartmentDocument = peopleEndpoint({
   responseExample: envelope({ deleted: true }),
 })
 
+const approvalTypesDocument = peopleEndpoint({
+  audience: 'open', id: 'people-approval-types', group: '通用审批', title: '查询审批类型',
+  summary: '返回当前支持的请假、岗位异动和离职流程定义及有序审批步骤。', method: 'GET', path: '/approval-types', auth: 'session',
+  permissionRequirement: '任意有效 People 会话。', requestFields: [sessionField],
+  responseFields: [
+    ...envelopeFields, field('data', 'Response', 'array<object>', true, '审批类型定义。'),
+    field('data[].code', 'Response', 'string', true, 'leave、transfer 或 departure。', 'leave'),
+    field('data[].name', 'Response', 'string', true, '类型显示名称。', '请假'),
+    field('data[].description', 'Response', 'string', true, '适用场景说明。'),
+    field('data[].steps', 'Response', 'array<string>', true, '按执行顺序排列的审批步骤名称。'),
+  ],
+  responseExample: envelope([{ code: 'leave', name: '请假', description: '年假、病假、事假等休假申请', steps: ['部门负责人审批'] }, { code: 'transfer', name: '岗位异动', description: '部门或职务调整申请', steps: ['部门负责人审批', 'HR 审批'] }, { code: 'departure', name: '离职', description: '员工离职与账号停用流程', steps: ['部门负责人审批', 'HR 审批'] }]),
+})
+
+const listApprovalsDocument = peopleEndpoint({
+  audience: 'open', id: 'people-list-approvals', group: '通用审批', title: '查询审批流程',
+  summary: '按可见范围、类型和状态筛选审批；结果包含步骤及当前用户可执行动作。', method: 'GET', path: '/approvals', examplePath: '/approvals?scope=pending&type=leave&status=pending', auth: 'session',
+  permissionRequirement: '任意有效 People 会话；scope=all 需要 people.approval:view，权限审批步骤需要 people.approval:review。',
+  requestFields: [
+    sessionField,
+    field('scope', 'Query', 'string', false, 'mine 仅本人、pending 当前待办、all 全量；省略时返回本人和与本人相关流程。', 'pending'),
+    field('type', 'Query', 'string', false, 'leave、transfer 或 departure。', 'leave'),
+    field('status', 'Query', 'string', false, 'pending、approved、rejected 或 cancelled。', 'pending'),
+  ],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '审批流程列表。'), ...approvalFields.map((item) => ({ ...item, name: item.name.replace('data.', 'data[].') }))],
+  responseExample: envelope([approvalExample]),
+})
+
+const createApprovalDocument = peopleEndpoint({
+  audience: 'open', id: 'people-create-approval', group: '通用审批', title: '发起审批流程',
+  summary: '发起请假、岗位异动或离职审批；同一员工同一类型只能存在一个待审批流程。', method: 'POST', path: '/approvals', auth: 'session-csrf',
+  permissionRequirement: '任意非管理员在职员工；所在启用部门必须配置其他员工作为负责人。',
+  prerequisites: [
+    'leave.data：leaveType 为 annual、sick、personal 或 other；startDate/endDate 同年且包含 1-60 个工作日；年假校验可用余额。',
+    'transfer.data：targetDepartmentId、targetTitle、effectiveDate 必填，可选 reason；目标部门必须启用。',
+    'departure.data：reason、lastWorkingDate 必填；日期不得早于今天。',
+  ],
+  requestFields: [
+    ...csrfFields,
+    field('type', 'Body', 'string', true, 'leave、transfer 或 departure。', 'transfer'),
+    field('data', 'Body', 'object', true, '由 type 决定的类型专属数据。'),
+  ],
+  responseFields: [...envelopeFields, ...approvalFields], errors: mutationErrors,
+  requestBody: JSON.stringify({ type: 'transfer', data: { targetDepartmentId: 'dep_data', targetTitle: '高级后端工程师', effectiveDate: '2026-09-01', reason: '组织调整' } }, null, 2),
+  responseExample: envelope(approvalExample, '创建成功'),
+})
+
+const getApprovalDocument = peopleEndpoint({
+  audience: 'open', id: 'people-get-approval', group: '通用审批', title: '查询审批详情',
+  summary: '返回审批业务数据、完整步骤和当前用户可执行动作。', method: 'GET', path: '/approvals/:id', examplePath: '/approvals/apr_example', auth: 'session',
+  permissionRequirement: '申请人、流程审批人、people.approval:view 或 people.approval:review 用户。',
+  requestFields: [sessionField, field('id', 'Path', 'string', true, '审批流程 ID。', 'apr_example')], responseFields: [...envelopeFields, ...approvalFields],
+  errors: mutationErrors, responseExample: envelope(approvalExample),
+})
+
+const reviewApprovalDocument = peopleEndpoint({
+  audience: 'open', id: 'people-review-approval', group: '通用审批', title: '处理审批步骤',
+  summary: '仅当前步骤的指定负责人或具备步骤权限的 HR 可以通过或驳回，申请人不能审批自己的流程。', method: 'POST', path: '/approvals/:id/review', examplePath: '/approvals/apr_example/review', auth: 'session-csrf',
+  permissionRequirement: '当前用户匹配步骤 approverId，或步骤要求 people.approval:review 且用户具备该权限。',
+  requestFields: [...csrfFields, field('id', 'Path', 'string', true, '审批流程 ID。', 'apr_example'), field('approved', 'Body', 'boolean', true, 'true 通过，false 驳回。', 'true'), field('comment', 'Body', 'string', false, '审批意见，最长 500 字符。', '同意')],
+  responseFields: [...envelopeFields, ...approvalFields], errors: mutationErrors,
+  requestBody: JSON.stringify({ approved: true, comment: '同意' }, null, 2), responseExample: envelope({ ...approvalExample, currentStep: 2, currentStepName: 'HR 审批' }),
+})
+
+const cancelApprovalDocument = peopleEndpoint({
+  audience: 'open', id: 'people-cancel-approval', group: '通用审批', title: '撤回审批流程',
+  summary: '申请人在第一步尚未处理前撤回自己的流程，同时取消关联请假记录。', method: 'POST', path: '/approvals/:id/cancel', examplePath: '/approvals/apr_example/cancel', auth: 'session-csrf',
+  permissionRequirement: '申请人本人，且流程为 pending、currentStep=1。',
+  requestFields: [...csrfFields, field('id', 'Path', 'string', true, '审批流程 ID。', 'apr_example')],
+  responseFields: [...envelopeFields, field('data.cancelled', 'Response', 'boolean', true, '是否撤回成功。', 'true')], errors: mutationErrors, responseExample: envelope({ cancelled: true }),
+})
+
+const leaveBalanceDocument = peopleEndpoint({
+  audience: 'open', id: 'people-leave-balance', group: '假勤管理', title: '查询个人假期余额',
+  summary: '返回当前员工指定年度的年假额度、已用、审批中和剩余天数，以及病假和事假已用天数。', method: 'GET', path: '/leave/balance', examplePath: '/leave/balance?year=2026', auth: 'session',
+  permissionRequirement: '任意有效 People 会话，只能查询本人。', requestFields: [sessionField, field('year', 'Query', 'integer', false, '年度，2000-2200；无效或省略时使用当前年。', '2026')],
+  responseFields: [
+    ...envelopeFields, field('data.employeeId', 'Response', 'string', true, '员工公开 ID。', employeeExample.id),
+    field('data.year', 'Response', 'integer', true, '额度年度。', '2026'),
+    field('data.annualEntitlement', 'Response', 'number', true, '年假总额度。', '10'),
+    field('data.annualUsed', 'Response', 'number', true, '已批准使用的年假。', '2'),
+    field('data.annualPending', 'Response', 'number', true, '审批中的年假。', '1'),
+    field('data.annualRemaining', 'Response', 'number', true, '可申请年假余额。', '7'),
+    field('data.sickUsed', 'Response', 'number', true, '已批准病假天数。', '1'),
+    field('data.personalUsed', 'Response', 'number', true, '已批准事假天数。', '0'),
+  ],
+  responseExample: envelope({ employeeId: employeeExample.id, year: 2026, annualEntitlement: 10, annualUsed: 2, annualPending: 1, annualRemaining: 7, sickUsed: 1, personalUsed: 0 }),
+})
+
+const leaveCalendarDocument = peopleEndpoint({
+  audience: 'open', id: 'people-leave-calendar', group: '假勤管理', title: '查询休假日历',
+  summary: '查询与指定月份有交集的休假；员工看本人，部门负责人看本部门，people.approval:view 看全量。', method: 'GET', path: '/leave/calendar', examplePath: '/leave/calendar?month=2026-08', auth: 'session',
+  permissionRequirement: '任意有效 People 会话；可见范围随角色和权限收敛。', requestFields: [sessionField, field('month', 'Query', 'string', false, '月份，YYYY-MM；省略时返回全部可见记录。', '2026-08')],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '休假记录，包含员工、部门、假种、起止日期、工作日数、原因和审批状态。')],
+  responseExample: envelope([{ id: 'lev_example', approvalId: 'apr_leave', employeeId: employeeExample.id, employeeName: employeeExample.displayName, departmentId: 'dep_platform', departmentName: '平台研发部', leaveType: 'annual', startDate: '2026-08-17', endDate: '2026-08-18', days: 2, reason: '家庭安排', status: 'approved', createdAt: '2026-08-09T08:00:00Z', updatedAt: '2026-08-09T08:00:00Z' }]),
+})
+
+const listContractsDocument = peopleEndpoint({
+  audience: 'open', id: 'people-list-contracts', group: '合同管理', title: '查询员工合同',
+  summary: '员工查看本人合同；具备合同查看或管理权限的用户可查看全量并按员工筛选。', method: 'GET', path: '/contracts', examplePath: `/contracts?employeeId=${employeeExample.id}`, auth: 'session',
+  permissionRequirement: '任意有效 People 会话；查询他人需要 people.contract:view 或 people.contract:manage。',
+  requestFields: [sessionField, field('employeeId', 'Query', 'string', false, '员工公开 ID；无全量权限时忽略并仅返回本人。', employeeExample.id)],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '合同记录。'), ...contractFields.map((item) => ({ ...item, name: item.name.replace('data.', 'data[].') }))], responseExample: envelope([contractExample]),
+})
+
+const createContractDocument = peopleEndpoint({
+  audience: 'open', id: 'people-create-contract', group: '合同管理', title: '创建员工合同',
+  summary: '为指定员工登记合同，并保证同一员工最多一份生效合同。', method: 'POST', path: '/employees/:id/contracts', examplePath: `/employees/${employeeExample.id}/contracts`, auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.contract:manage。', requestFields: [...csrfFields, idField, ...contractInputFields],
+  responseFields: [...envelopeFields, ...contractFields], errors: mutationErrors,
+  requestBody: JSON.stringify({ type: 'fixed_term', startDate: '2026-08-01', endDate: '2029-07-31', status: 'active', documentName: '张三劳动合同.pdf', note: '首签三年' }, null, 2), responseExample: envelope(contractExample, '创建成功'),
+})
+
+const updateContractDocument = peopleEndpoint({
+  audience: 'open', id: 'people-update-contract', group: '合同管理', title: '更新员工合同',
+  summary: '更新合同类型、期限、状态和关联文档信息。', method: 'PUT', path: '/contracts/:id', examplePath: '/contracts/ctr_example', auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.contract:manage。', requestFields: [...csrfFields, field('id', 'Path', 'string', true, '合同记录 ID。', 'ctr_example'), ...contractInputFields],
+  responseFields: [...envelopeFields, ...contractFields], errors: mutationErrors,
+  requestBody: JSON.stringify({ type: 'fixed_term', startDate: '2026-08-01', endDate: '2029-07-31', status: 'active', documentName: '张三劳动合同.pdf', note: '续签待办已完成' }, null, 2), responseExample: envelope(contractExample),
+})
+
+const deleteContractDocument = peopleEndpoint({
+  audience: 'open', id: 'people-delete-contract', group: '合同管理', title: '删除员工合同',
+  summary: '删除指定合同记录。', method: 'DELETE', path: '/contracts/:id', examplePath: '/contracts/ctr_example', auth: 'session-csrf',
+  permissionRequirement: 'People 会话具备 people.contract:manage。', requestFields: [...csrfFields, field('id', 'Path', 'string', true, '合同记录 ID。', 'ctr_example')],
+  responseFields: [...envelopeFields, field('data.deleted', 'Response', 'boolean', true, '是否删除成功。', 'true')], errors: mutationErrors, responseExample: envelope({ deleted: true }),
+})
+
+const listGoalsDocument = peopleEndpoint({
+  audience: 'open', id: 'people-list-goals', group: '绩效目标', title: '查询绩效目标',
+  summary: '员工查看本人目标，部门负责人同时查看本部门目标，绩效权限用户查看全量。', method: 'GET', path: '/performance-goals', examplePath: '/performance-goals?cycle=2026-H2', auth: 'session',
+  permissionRequirement: '任意有效 People 会话；people.performance:view 或 people.performance:manage 可查看全量。',
+  requestFields: [sessionField, field('cycle', 'Query', 'string', false, '精确筛选绩效周期。', '2026-H2')],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '绩效目标。'), ...goalFields.map((item) => ({ ...item, name: item.name.replace('data.', 'data[].') }))], responseExample: envelope([goalExample]),
+})
+
+const createGoalDocument = peopleEndpoint({
+  audience: 'open', id: 'people-create-goal', group: '绩效目标', title: '创建个人绩效目标',
+  summary: '当前员工为自己创建目标，初始状态省略时默认为 active。', method: 'POST', path: '/performance-goals', auth: 'session-csrf',
+  permissionRequirement: '任意有效 People 会话并完成 CSRF 校验。', requestFields: [...csrfFields, ...goalInputFields],
+  responseFields: [...envelopeFields, ...goalFields], errors: mutationErrors,
+  requestBody: JSON.stringify({ cycle: '2026-H2', title: '提升核心服务可靠性', description: '将关键链路可用性提升至 99.95%', dueDate: '2026-12-31', weight: 40, progress: 0, status: 'active', managerComment: '' }, null, 2), responseExample: envelope(goalExample, '创建成功'),
+})
+
+const updateGoalDocument = peopleEndpoint({
+  audience: 'open', id: 'people-update-goal', group: '绩效目标', title: '更新绩效目标或反馈',
+  summary: '员工或 HR 更新目标内容和进度；部门负责人或 HR 可填写管理者反馈。', method: 'PUT', path: '/performance-goals/:id', examplePath: '/performance-goals/gol_example', auth: 'session-csrf',
+  permissionRequirement: '目标本人、所属部门负责人，或具备 people.performance:manage 的用户。',
+  requestFields: [...csrfFields, field('id', 'Path', 'string', true, '绩效目标 ID。', 'gol_example'), ...goalInputFields],
+  responseFields: [...envelopeFields, ...goalFields], errors: mutationErrors,
+  requestBody: JSON.stringify({ cycle: '2026-H2', title: '提升核心服务可靠性', description: '将关键链路可用性提升至 99.95%', dueDate: '2026-12-31', weight: 40, progress: 30, status: 'active', managerComment: '按季度检查关键指标' }, null, 2), responseExample: envelope(goalExample),
+})
+
 const listDeparturesDocument = peopleEndpoint({
-  audience: 'open', id: 'people-list-departures', group: '离职审批', title: '查询离职申请', summary: '普通员工看到本人申请和本人负责部门的申请；HR 看到全部状态记录。',
+  audience: 'open', id: 'people-list-departures', group: '兼容接口', title: '查询离职申请（兼容）', summary: '旧版离职审批兼容接口；新集成应使用 GET /approvals?type=departure。',
   method: 'GET', path: '/departures', auth: 'session', permissionRequirement: '任意有效 People 会话；people.departure:review 可查看全量。', requestFields: [sessionField],
   responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '当前用户可见的离职申请。'), ...departureFields.map((item) => ({ ...item, name: item.name.replace('data.', 'data[].') }))],
   responseExample: envelope([departureExample]),
 })
 
 const createDepartureDocument = peopleEndpoint({
-  audience: 'open', id: 'people-create-departure', group: '离职审批', title: '发起离职申请', summary: '为当前非管理员员工发起离职申请，并通知所在部门负责人。',
+  audience: 'open', id: 'people-create-departure', group: '兼容接口', title: '发起离职申请（兼容）', summary: '旧版兼容入口；内部创建的仍是 departure 类型通用审批，新集成应使用 POST /approvals。',
   method: 'POST', path: '/departures', auth: 'session-csrf', permissionRequirement: '任意非管理员在职员工；所在部门必须配置其他员工作为负责人。',
   requestFields: [...csrfFields, field('reason', 'Body', 'string', true, '离职原因，最长 1000 字符。', '个人发展'), field('lastWorkingDate', 'Body', 'string', true, '最后工作日，不得早于今天。', '2026-08-31')],
   responseFields: [...envelopeFields, ...departureFields], errors: mutationErrors, requestBody: JSON.stringify({ reason: '个人发展', lastWorkingDate: '2026-08-31' }, null, 2), responseExample: envelope(departureExample, '创建成功'),
@@ -225,7 +529,7 @@ const createDepartureDocument = peopleEndpoint({
 function reviewDepartureDocument(stage: 'manager' | 'hr'): EndpointDocument {
   const hr = stage === 'hr'
   return peopleEndpoint({
-    audience: 'open', id: `people-review-departure-${stage}`, group: '离职审批', title: hr ? 'HR 审批离职' : '负责人审批离职',
+    audience: 'open', id: `people-review-departure-${stage}`, group: '兼容接口', title: hr ? 'HR 审批离职（兼容）' : '负责人审批离职（兼容）',
     summary: hr ? '执行离职终审；通过后立即停用申请人账号并撤销会话和 OAuth Token。' : '部门负责人执行一审；通过后流转 HR，驳回则结束。',
     method: 'POST', path: `/departures/:id/${stage}-review`, examplePath: `/departures/dpr_example/${stage}-review`, auth: 'session-csrf',
     permissionRequirement: hr ? 'People 会话具备 people.departure:review。' : '当前用户必须是申请快照中的部门负责人。',
@@ -236,7 +540,7 @@ function reviewDepartureDocument(stage: 'manager' | 'hr'): EndpointDocument {
 }
 
 const cancelDepartureDocument = peopleEndpoint({
-  audience: 'open', id: 'people-cancel-departure', group: '离职审批', title: '撤回离职申请', summary: '申请人在负责人审批前撤回自己的离职申请。',
+  audience: 'open', id: 'people-cancel-departure', group: '兼容接口', title: '撤回离职申请（兼容）', summary: '旧版兼容入口；申请人在负责人审批前撤回自己的离职申请。',
   method: 'POST', path: '/departures/:id/cancel', examplePath: '/departures/dpr_example/cancel', auth: 'session-csrf', permissionRequirement: '申请本人且状态为 pending_manager。',
   requestFields: [...csrfFields, field('id', 'Path', 'string', true, '离职申请 ID。', 'dpr_example')], responseFields: [...envelopeFields, field('data.cancelled', 'Response', 'boolean', true, '是否已撤回。', 'true')], errors: mutationErrors, responseExample: envelope({ cancelled: true }),
 })
@@ -327,11 +631,28 @@ export const peopleOpenEndpoints: EndpointDocument[] = [
   deleteEmployeeDocument,
   resetEmployeePasswordDocument,
   setEmployeeEnabledDocument,
+  updateProfileDocument,
+  employmentEventsDocument,
   hrDashboardDocument,
   listDepartmentsDocument,
   createDepartmentDocument,
   updateDepartmentDocument,
   deleteDepartmentDocument,
+  approvalTypesDocument,
+  listApprovalsDocument,
+  createApprovalDocument,
+  getApprovalDocument,
+  reviewApprovalDocument,
+  cancelApprovalDocument,
+  leaveBalanceDocument,
+  leaveCalendarDocument,
+  listContractsDocument,
+  createContractDocument,
+  updateContractDocument,
+  deleteContractDocument,
+  listGoalsDocument,
+  createGoalDocument,
+  updateGoalDocument,
   listDeparturesDocument,
   createDepartureDocument,
   reviewDepartureDocument('manager'),

@@ -66,6 +66,9 @@ export const employeeInputFields: FieldDefinition[] = [
   field('hireDate', 'Body', 'string', false, '入职日期，YYYY-MM-DD。', '2026-08-01'),
   field('probationEndDate', 'Body', 'string', false, '试用期结束日期，YYYY-MM-DD，不能早于入职日期。', '2026-11-01'),
   field('workLocation', 'Body', 'string', false, '工作地点，最长 100 字符。', '北京'),
+  field('emergencyContactName', 'Body', 'string', false, '紧急联系人姓名，最长 100 字符。', '李四'),
+  field('emergencyContactPhone', 'Body', 'string', false, '紧急联系人电话，最长 32 字符。', '13900139000'),
+  field('emergencyContactRelation', 'Body', 'string', false, '紧急联系人关系，最长 50 字符。', '配偶'),
 ]
 
 export function employeeResponseFields(prefix = 'data'): FieldDefinition[] {
@@ -83,6 +86,9 @@ export function employeeResponseFields(prefix = 'data'): FieldDefinition[] {
     field(`${prefix}.hireDate`, 'Response', 'string', true, '入职日期；未设置时为空字符串。', '2026-08-01'),
     field(`${prefix}.probationEndDate`, 'Response', 'string', true, '试用期结束日期；未设置时为空字符串。', '2026-11-01'),
     field(`${prefix}.workLocation`, 'Response', 'string', true, '工作地点；未设置时为空字符串。', '北京'),
+    field(`${prefix}.emergencyContactName`, 'Response', 'string', true, '紧急联系人姓名。', '李四'),
+    field(`${prefix}.emergencyContactPhone`, 'Response', 'string', true, '紧急联系人电话。', '13900139000'),
+    field(`${prefix}.emergencyContactRelation`, 'Response', 'string', true, '紧急联系人关系。', '配偶'),
     field(`${prefix}.role`, 'Response', 'string', true, '员工角色。', 'employee'),
     field(`${prefix}.status`, 'Response', 'string', true, '员工状态。', 'enabled'),
     field(`${prefix}.permissions`, 'Response', 'array<string>', true, '从 Permission 实时解析的 People 权限码。'),
@@ -348,6 +354,9 @@ export const employeeExample = {
   hireDate: '2026-08-01',
   probationEndDate: '2026-11-01',
   workLocation: '北京',
+  emergencyContactName: '李四',
+  emergencyContactPhone: '13900139000',
+  emergencyContactRelation: '配偶',
   role: 'employee',
   status: 'enabled',
   permissions: ['people.employee:view'],
