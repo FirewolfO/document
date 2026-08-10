@@ -8,6 +8,8 @@ import {
   envelopeFields,
   field,
   peopleEndpoint,
+  positionExample,
+  positionResponseFields,
 } from './common'
 
 const signatureFields: FieldDefinition[] = [
@@ -32,7 +34,7 @@ const listEmployeesDocument = peopleEndpoint({
   permissionRequirement: 'Gateway Inner 服务签名；当前仅授权配置的内部调用方服务。',
   requestFields: [
     ...signatureFields,
-    field('q', 'Query', 'string', false, '按工号、用户名、姓名、邮箱或部门名称模糊搜索。', 'zhang'),
+    field('q', 'Query', 'string', false, '按工号、用户名、姓名、邮箱、部门或岗位名称模糊搜索。', 'zhang'),
     field('page', 'Query', 'integer', false, '页码，最小为 1；无效值回退为 1。', '1'),
     field('pageSize', 'Query', 'integer', false, '每页数量，1-100；无效值回退为 20。该接口示例使用 100。', '100'),
   ],
@@ -68,8 +70,23 @@ const listDepartmentsDocument = peopleEndpoint({
   errors: innerErrors, responseExample: envelope([departmentExample]),
 })
 
+const listPositionsDocument = peopleEndpoint({
+  audience: 'inner', id: 'people-inner-list-positions', group: '岗位目录', title: '查询岗位目录',
+  summary: '读取岗位状态、关联部门与当前员工数量。', method: 'GET', path: '/directory/positions',
+  examplePath: '/directory/positions?departmentId=dep_platform&q=engineer', auth: 'inner',
+  permissionRequirement: 'Gateway Inner 服务签名；当前仅授权配置的内部调用方服务。',
+  requestFields: [
+    ...signatureFields,
+    field('q', 'Query', 'string', false, '按岗位编码或名称模糊搜索。', 'engineer'),
+    field('departmentId', 'Query', 'string', false, '仅返回关联到指定部门的岗位。', 'dep_platform'),
+  ],
+  responseFields: [...envelopeFields, field('data', 'Response', 'array<object>', true, '岗位列表。'), ...positionResponseFields('data[]')],
+  errors: innerErrors, responseExample: envelope([positionExample]),
+})
+
 export const peopleInnerEndpoints: EndpointDocument[] = [
   listEmployeesDocument,
   getEmployeeDocument,
   listDepartmentsDocument,
+  listPositionsDocument,
 ]

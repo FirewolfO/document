@@ -26,12 +26,16 @@ People 通过 Permission 内置应用 `people_center` 校验管理能力。内�
 
 新员工没有初始密码，在 `mustChangePassword=true` 时登录不校验输入密码，并被限制为只能查看当前会话、退出或设置密码。只要未成功设置密码，下次登录仍按首次登录处理；设置后即使用 bcrypt 哈希保存并严格校验新密码。
 
-部门按树形层级维护，上级关系通过 `parentId` 表示，并可通过 `leaderId` 指定本部门在职员工作为负责人。停用部门不能再分配给员工，仍有关联员工或下级部门的部门不能删除；修改上级部门时会拒绝自引用和循环层级。部门改名会同步更新员工响应中的兼容字段 `department`。员工档案还包括用工类型、入职日期、试用期结束日期、工作地点和紧急联系人；员工本人可自助维护联系方式和紧急联系人。
+部门按树形层级维护，上级关系通过 `parentId` 表示，并可通过 `leaderId` 指定本部门在职员工作为负责人。停用部门不能再分配给员工，仍有关联员工或下级部门的部门不能删除；修改上级部门时会拒绝自引用和循环层级。部门改名会同步更新员工响应中的兼容字段 `department`。
+
+岗位与部门为多对多关系，通过 `departmentIds` 维护关联。每名员工必须选择一个已启用且属于其部门的岗位，内置 `admin` 固定使用“系统管理员”岗位；响应中的 `positionId` 是正式岗位关联，`title` 保留为岗位名称快照以兼容既有消费者。有关联员工的岗位不能停用、删除或移除员工所在部门。系统幂等预置系统管理员、通用员工及管理、研发、架构、前后端、移动端、测试、DevOps、SRE、安全、数据、AI、产品、设计和企业职能等常见岗位；旧自由文本职务会在升级时自动迁移。
+
+员工档案还包括用工类型、入职日期、试用期结束日期、工作地点和紧急联系人；员工本人可自助维护联系方式和紧急联系人。
 
 审批中心使用统一的审批单与步骤模型，首批类型为请假、岗位异动和离职。申请人可查看本人流程，部门负责人可查看本人处理过或待处理的步骤，具备 `people.approval:view` 的 HR 可查看全量台账，`people.approval:review` 用于 HR 步骤。每一步都记录审批人、意见和时间，审批中流程可在负责人处理前撤回；在线新增待办会弹出提醒，重新登录后右上角显示待审批数字。
 
 - 请假：系统按日期自动计算工作日，负责人审批通过后写入休假日历并扣减相应余额；年假提交时即占用可用额度，防止重复超额申请。
-- 岗位异动：负责人审批后流转 HR，最终通过时原子更新部门和职务，同时保留稳定员工公开 ID、员工号和完整任职履历。
+- 岗位异动：申请人从目标部门已关联岗位中选择，负责人审批后流转 HR，最终通过时原子更新部门和岗位，同时保留稳定员工公开 ID、员工号和完整任职履历。
 - 离职：作为审批类型执行负责人和 HR 两级审批，最终通过后停用账号、撤销 Session 与 OAuth Token，并写入离职履历。仍担任部门负责人的员工必须先完成负责人交接。
 
 人事运营还提供劳动合同台账（期限、状态、临期风险）、绩效目标（周期、权重、进度、负责人反馈）、员工任职履历和假期团队日历。人事概览汇总在职率、组织分布、用工结构、待审批、当日休假、合同临期和逾期目标。
@@ -53,6 +57,8 @@ People 通过 Permission 内置应用 `people_center` 校验管理能力。内�
 | `GET` | `/api/open/people/employees/{id}/events` | 查询员工任职履历 |
 | `GET/POST` | `/api/open/people/departments` | 部门列表与创建 |
 | `PUT/DELETE` | `/api/open/people/departments/{id}` | 更新或删除部门 |
+| `GET/POST` | `/api/open/people/positions` | 岗位列表与创建 |
+| `PUT/DELETE` | `/api/open/people/positions/{id}` | 更新或删除岗位 |
 | `GET` | `/api/open/people/hr/dashboard` | 人事统计概览 |
 | `GET` | `/api/open/people/approval-types` | 查询可发起的审批类型 |
 | `GET/POST` | `/api/open/people/approvals` | 查询或发起通用审批 |
@@ -83,6 +89,7 @@ Permission 不直接读取 People 数据库。Gateway Admin 会在 Inner 工作�
 | `GET` | `/api/inner/people/directory/employees` | 全量员工目录 |
 | `GET` | `/api/inner/people/directory/employees/{id}` | 单个员工及其当前部门 |
 | `GET` | `/api/inner/people/directory/departments` | 全量部门及 `parentId` 层级 |
+| `GET` | `/api/inner/people/directory/positions` | 全量岗位及部门多对多关系 |
 
 对应 People 上游路径为 `/api/v1/inner/directory/**`，并使用与 Open 路由不同的系统签名凭据。
 

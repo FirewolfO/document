@@ -61,7 +61,7 @@ export const employeeInputFields: FieldDefinition[] = [
   field('email', 'Body', 'string', false, '邮箱，最长 255 字符。', 'zhangsan@example.com'),
   field('phone', 'Body', 'string', false, '联系电话，最长 32 字符。', '+86 13800138000'),
   field('departmentId', 'Body', 'string', true, '已启用的部门 ID。', 'dep_example'),
-  field('title', 'Body', 'string', false, '职位名称，最长 100 字符。', '后端工程师'),
+  field('positionId', 'Body', 'string', true, '已启用且关联到所选部门的岗位 ID。', 'pos_backend_engineer'),
   field('employmentType', 'Body', 'string', false, '用工类型：full_time、part_time、contract 或 intern；默认 full_time。', 'full_time'),
   field('hireDate', 'Body', 'string', false, '入职日期，YYYY-MM-DD。', '2026-08-01'),
   field('probationEndDate', 'Body', 'string', false, '试用期结束日期，YYYY-MM-DD，不能早于入职日期。', '2026-11-01'),
@@ -81,7 +81,8 @@ export function employeeResponseFields(prefix = 'data'): FieldDefinition[] {
     field(`${prefix}.phone`, 'Response', 'string', true, '联系电话，未设置时为空字符串。', '+86 13800138000'),
     field(`${prefix}.departmentId`, 'Response', 'string', true, '所属部门 ID，未分配时为空字符串。', 'dep_example'),
     field(`${prefix}.department`, 'Response', 'string', true, '所属部门名称，未分配时为空字符串。', '研发部'),
-    field(`${prefix}.title`, 'Response', 'string', true, '职位名称。', '后端工程师'),
+    field(`${prefix}.positionId`, 'Response', 'string', true, '岗位 ID；每名员工均有一个岗位。', 'pos_backend_engineer'),
+    field(`${prefix}.title`, 'Response', 'string', true, '岗位名称快照，保留该字段用于兼容既有消费者。', '后端开发工程师'),
     field(`${prefix}.employmentType`, 'Response', 'string', true, '用工类型。', 'full_time'),
     field(`${prefix}.hireDate`, 'Response', 'string', true, '入职日期；未设置时为空字符串。', '2026-08-01'),
     field(`${prefix}.probationEndDate`, 'Response', 'string', true, '试用期结束日期；未设置时为空字符串。', '2026-11-01'),
@@ -125,6 +126,30 @@ export function departmentResponseFields(prefix = 'data'): FieldDefinition[] {
   ]
 }
 
+export const positionInputFields: FieldDefinition[] = [
+  field('code', 'Body', 'string', true, '岗位编码，以小写字母开头，仅含小写字母、数字、下划线或连字符，最长 32。', 'backend_engineer'),
+  field('name', 'Body', 'string', true, '岗位名称，最长 100 字符。', '后端开发工程师'),
+  field('description', 'Body', 'string', false, '岗位描述，最长 500 字符。', '负责服务端系统设计与开发'),
+  field('departmentIds', 'Body', 'array<string>', true, '可使用该岗位的部门 ID；岗位与部门为多对多关系，可为空数组。'),
+  field('status', 'Body', 'string', false, '状态：enabled 或 disabled；默认 enabled。', 'enabled'),
+]
+
+export function positionResponseFields(prefix = 'data'): FieldDefinition[] {
+  return [
+    field(`${prefix}.id`, 'Response', 'string', true, '岗位 ID。', 'pos_backend_engineer'),
+    field(`${prefix}.code`, 'Response', 'string', true, '岗位编码。', 'backend_engineer'),
+    field(`${prefix}.name`, 'Response', 'string', true, '岗位名称。', '后端开发工程师'),
+    field(`${prefix}.description`, 'Response', 'string', true, '岗位描述。', '负责服务端系统设计与开发'),
+    field(`${prefix}.status`, 'Response', 'string', true, '岗位状态。', 'enabled'),
+    field(`${prefix}.builtin`, 'Response', 'boolean', true, '是否为不可删除的内置岗位。', 'false'),
+    field(`${prefix}.departmentIds`, 'Response', 'array<string>', true, '关联部门 ID。'),
+    field(`${prefix}.departmentNames`, 'Response', 'array<string>', true, '关联部门名称。'),
+    field(`${prefix}.employeeCount`, 'Response', 'integer', true, '当前使用该岗位的员工数量。', '8'),
+    field(`${prefix}.createdAt`, 'Response', 'string', true, '创建时间，ISO 8601 格式。', '2026-08-01T08:00:00Z'),
+    field(`${prefix}.updatedAt`, 'Response', 'string', true, '更新时间，ISO 8601 格式。', '2026-08-07T10:00:00Z'),
+  ]
+}
+
 export const standardErrors: ErrorDefinition[] = [
   { httpStatus: 400, code: 'INVALID_ARGUMENT', description: '参数格式或取值不符合约束。', resolution: '按请求参数表修正请求，不要原样重试。' },
   { httpStatus: 401, code: 'UNAUTHORIZED', description: '登录态、OAuth Token 或调用凭据无效。', resolution: '重新登录、刷新 Token，或检查调用凭据。' },
@@ -135,15 +160,15 @@ export const standardErrors: ErrorDefinition[] = [
 export const notFoundError: ErrorDefinition = {
   httpStatus: 404,
   code: 'NOT_FOUND',
-  description: '指定员工或部门不存在。',
+  description: '指定员工、部门或岗位不存在。',
   resolution: '检查路径参数是否为有效的公开 ID。',
 }
 
 export const conflictError: ErrorDefinition = {
   httpStatus: 409,
   code: 'CONFLICT',
-  description: '用户名、部门编码或部门名称已存在，存在待审批申请，或资源仍被关联。',
-  resolution: '使用唯一值；删除部门前先移除员工和下级部门关联。',
+  description: '用户名、部门或岗位编码/名称已存在，存在待审批申请，或资源仍被关联。',
+  resolution: '使用唯一值；删除组织资源前先移除员工和层级关联。',
 }
 
 export function peopleEndpoint(input: PeopleEndpointInput): EndpointDocument {
@@ -349,7 +374,8 @@ export const employeeExample = {
   phone: '+86 13800138000',
   departmentId: 'dep_platform',
   department: '平台研发部',
-  title: '后端工程师',
+  positionId: 'pos_backend_engineer',
+  title: '后端开发工程师',
   employmentType: 'full_time',
   hireDate: '2026-08-01',
   probationEndDate: '2026-11-01',
@@ -377,6 +403,20 @@ export const departmentExample = {
   leaderName: '李四',
   status: 'enabled',
   employeeCount: 12,
+  createdAt: '2026-08-01T08:00:00Z',
+  updatedAt: '2026-08-07T10:00:00Z',
+}
+
+export const positionExample = {
+  id: 'pos_backend_engineer',
+  code: 'backend_engineer',
+  name: '后端开发工程师',
+  description: '负责服务端系统设计与开发',
+  status: 'enabled',
+  builtin: false,
+  departmentIds: ['dep_platform'],
+  departmentNames: ['平台研发部'],
+  employeeCount: 8,
   createdAt: '2026-08-01T08:00:00Z',
   updatedAt: '2026-08-07T10:00:00Z',
 }
